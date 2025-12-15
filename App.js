@@ -1,10 +1,27 @@
+import React from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Image, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-// Sử dụng Icon có sẵn trong Expo
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { top100AvgPoint, top10AvgTrainingPoint  } from './studentStatistics';
+import { class1 } from './studentStatistics';
+
 
 const { width } = Dimensions.get('window');
 
+const Excercise1 = () => {
+  return (
+    <ScrollView styles = {styles.container}>
+      <Text style={styles.title}>Danh sacsh vieen có điểm cao xuống thấp</Text>
+      {top100AvgPoint.map(student => (
+        <Text key={student.mssv}>{student.name}: {student.avgPoint}</Text>      
+      ))}
+      <Text style={styles.title}>Danh sacsh vieen có điểm ren luyen xuống thấp</Text>
+      {top10AvgTrainingPoint.map(student => (
+        <Text key={student.mssv}>{student.name}: {student.avgPoint}</Text>      
+      ))}
+    </ScrollView>
+  )
+}
 export default function App() {
   return (
     <View style={styles.container}>
@@ -101,10 +118,65 @@ const InfoItem = ({ icon, label, value, color, library }) => {
   );
 };
 
+const sortedByPoint = [...class1].sort((a, b) => b.avgPoint - a.avgPoint);
+const sortedByTrainingPoint = [...class1].sort((a, b) => b.avgTrainingPoint - a.avgTrainingPoint);
+return (
+  <SafeAreaView style={styles.container}>
+    <StatusBar style="dark" />
+    
+    {/* Header */}
+    <View style={styles.headerContainer}>
+      <Text style={styles.headerTitle}>Bài Tập 1</Text>
+    </View>
+
+    <ScrollView contentContainerStyle={styles.scrollContent}>
+      
+      {/* --- PHẦN 1: DANH SÁCH THEO ĐIỂM SỐ --- */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>
+          Danh sách sinh viên có điểm số từ cao xuống thấp:
+        </Text>
+        {sortedByPoint.map((student, index) => (
+          <Text key={index} style={styles.itemText}>
+            {student.name}: {student.avgPoint}
+          </Text>
+        ))}
+      </View>
+
+      {/* --- PHẦN 2: DANH SÁCH THEO ĐIỂM RÈN LUYỆN --- */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>
+          Danh sách sinh viên có điểm rèn luyện từ cao xuống thấp:
+        </Text>
+        {sortedByTrainingPoint.map((student, index) => (
+          <Text key={index} style={styles.itemText}>
+            {student.name}: {student.avgTrainingPoint}
+          </Text>
+        ))}
+      </View>
+
+    </ScrollView>
+
+    {/* Footer giả lập Tab Bar giống hình mẫu */}
+    <View style={styles.tabBar}>
+        <View style={styles.tabItem}>
+           <Text style={[styles.tabText, styles.activeTab]}>Bài Tập 1</Text>
+        </View>
+        <View style={styles.tabItem}>
+           <Text style={styles.tabText}>Bài Tập 2</Text>
+        </View>
+        <View style={styles.tabItem}>
+           <Text style={styles.tabText}>Bài Tập 3</Text>
+        </View>
+    </View>
+  </SafeAreaView>
+);
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F7FA', // Màu nền xám xanh rất nhạt
+    paddingTop: 50,
   },
   headerBackground: {
     height: 280,
