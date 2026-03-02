@@ -1,10 +1,11 @@
 import { 
   StyleSheet, Text, View, Image, ScrollView, TouchableOpacity, 
-  Dimensions, TextInput, Button,  SafeAreaView,
-  Platform, KeyboardAvoidingView,Alert 
+  Dimensions, TextInput, SafeAreaView, Platform, KeyboardAvoidingView, 
+  Alert, Modal, SectionList, Pressable
 } from 'react-native';
 
-import React from 'react';
+// Đã thêm useState vào phần import của React
+import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
@@ -12,17 +13,16 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { top100StudentsByAvgPoint, top10StudentsByAvgTrainingPoint } from './studentStatistics';
 import { useEventHandlers } from './evenHandlers';
 
-
-
 const { width } = Dimensions.get('window');
 const Tab = createBottomTabNavigator();
 
-
-
-// --- MÀN HÌNH 1: DANH SÁCH SINH VIÊN ---
+// --- MÀN HÌNH 1: DANH SÁCH SINH VIÊN (HỒ SƠ) ---
 const Excercise1 = () => {
+  // Quản lý trạng thái ẩn/hiện của Modal
+  const [modalVisible, setModalVisible] = useState(false);
+
   return (
-    <View style={{flex: 1, backgroundColor: '#F5F7FA'}}>
+    <ScrollView style={{flex: 1, backgroundColor: '#F5F7FA'}}>
       <StatusBar style="light" />
       {/* BACKGROUND HEADER */}
       <View style={styles.headerBackground}>
@@ -36,13 +36,17 @@ const Excercise1 = () => {
       {/* MAIN CONTENT */}
       <View style={styles.contentContainer}>
         <View style={styles.card}>
-          <View style={styles.avatarWrapper}>
+          {/* THÀNH PHẦN: ImageButton - Bọc Image bằng TouchableOpacity */}
+          <TouchableOpacity 
+            style={styles.avatarWrapper}
+            onPress={() => Alert.alert('Thông báo', 'Bạn vừa bấm vào ảnh đại diện (ImageButton)')}
+          >
              <Image 
                 source={{ uri: 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png' }} 
                 style={styles.avatar} 
             />
             <View style={styles.activeBadge} />
-          </View>
+          </TouchableOpacity>
 
           <Text style={styles.nameText}>Nguyễn Trung Cường</Text>
           <Text style={styles.idText}>MSSV: 123000991</Text>
@@ -57,40 +61,69 @@ const Excercise1 = () => {
             <InfoItem icon="location-outline" label="Cơ sở" value="Cơ sở 1 - Biên Hòa" color="#7ED321"/>
           </View>
 
-          <TouchableOpacity style={styles.buttonShadow}>
+          {/* Nút mở Modal */}
+          <TouchableOpacity 
+            style={styles.buttonShadow}
+            onPress={() => setModalVisible(true)}
+          >
             <Text style={styles.buttonText}>Xem Bảng Điểm</Text>
             <Ionicons name="arrow-forward" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
-    </View>
+
+      {/* THÀNH PHẦN: Modal chứa thông tin */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        // Xử lý nút Back trên Android (Hardware Back Button)
+        onRequestClose={() => {
+          Alert.alert('Xác nhận', 'Bạn có chắc chắn muốn đóng bảng điểm không?', [
+            { text: 'Hủy', style: 'cancel' },
+            { text: 'Đóng', onPress: () => setModalVisible(false) },
+          ]);
+        }}
+      >
+        <View style={styles.modalBackground}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalTitle}>Bảng Điểm Chi Tiết</Text>
+            <Text style={styles.modalText}>Điểm Trung Bình: 10</Text>
+            <Text style={styles.modalText}>Điểm Rèn Luyện: 10</Text>
+            <Text style={styles.modalText}>Xếp loại: Xuất sắc</Text>
+            
+            <Pressable
+              style={[styles.buttonShadow, { backgroundColor: '#FF6B6B', marginTop: 20 }]}
+              onPress={() => setModalVisible(!modalVisible)}
+            >
+              <Text style={styles.buttonText}>Đóng Modal</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
+
+    </ScrollView>
   );
 }
 
-// Component thẻ sinh viên (Card)
+// Component thẻ sinh viên (Dùng chung cho Bài tập 1)
 const StudentCard = ({ index, student, type }) => {
-  // Màu sắc huy chương cho Top 3
   const getRankColor = (idx) => {
-    if (idx === 0) return '#FFD700'; // Vàng
-    if (idx === 1) return '#C0C0C0'; // Bạc
-    if (idx === 2) return '#CD7F32'; // Đồng
-    return '#E0E0E0'; // Mặc định
+    if (idx === 0) return '#FFD700';
+    if (idx === 1) return '#C0C0C0';
+    if (idx === 2) return '#CD7F32';
+    return '#E0E0E0';
   };
 
   return (
     <View style={styles.cardContainer}>
-      {/* Vị trí xếp hạng */}
       <View style={[styles.rankBadge, { backgroundColor: getRankColor(index) }]}>
         <Text style={styles.rankText}>{index + 1}</Text>
       </View>
-      
-      {/* Thông tin tên */}
       <View style={styles.infoContainer}>
         <Text style={styles.studentName}>{student.name}</Text>
         <Text style={styles.studentId}>MSSV: {student.id || 'Đang cập nhật'}</Text>
       </View>
-
-      {/* Điểm số */}
       <View style={styles.scoreContainer}>
         <Text style={styles.scoreLabel}>{type === 'point' ? 'Điểm TB' : 'ĐRL'}</Text>
         <Text style={styles.scoreValue}>
@@ -101,44 +134,57 @@ const StudentCard = ({ index, student, type }) => {
   );
 };
 
-// --- MÀN HÌNH 1: DANH SÁCH SINH VIÊN (Giao diện mới) ---
+// --- MÀN HÌNH 2: BẢNG XẾP HẠNG (Dùng SectionList) ---
 const Excercise2 = () => {
+  // Chuẩn bị dữ liệu cho SectionList
+  const rankingData = [
+    {
+      title: 'Top Điểm Học Tập',
+      icon: 'school',
+      iconColor: '#4A90E2',
+      data: top100StudentsByAvgPoint,
+      type: 'point'
+    },
+    {
+      title: 'Top Điểm Rèn Luyện',
+      icon: 'arm-flex',
+      iconColor: '#FF6B6B',
+      data: top10StudentsByAvgTrainingPoint,
+      type: 'training'
+    }
+  ];
+
   return (
     <View style={styles.mainContainer}>
       <StatusBar style="dark" />
       <View style={styles.headerSimple}>
         <Text style={styles.headerSimpleTitle}>Bảng Xếp Hạng</Text>
-        <Text style={styles.headerSimpleSubtitle}>Thành tích học tập & Rèn luyện</Text>
+        <Text style={styles.headerSimpleSubtitle}>Sử dụng SectionList tối ưu hiệu suất</Text>
       </View>
 
-      <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Mục 1: Điểm Học Tập */}
-        <View style={styles.sectionHeader}>
-          <MaterialCommunityIcons name="school" size={24} color="#4A90E2" />
-          <Text style={styles.sectionTitleModern}>Top Điểm Học Tập</Text>
-        </View>
-        
-        {top100StudentsByAvgPoint.map((student, index) => (
-          <StudentCard key={index} index={index} student={student} type="point" />
-        ))}
-
-        {/* Mục 2: Điểm Rèn Luyện */}
-        <View style={[styles.sectionHeader, { marginTop: 25 }]}>
-          <MaterialCommunityIcons name="arm-flex" size={24} color="#FF6B6B" />
-          <Text style={styles.sectionTitleModern}>Top Điểm Rèn Luyện</Text>
-        </View>
-
-        {top10StudentsByAvgTrainingPoint.map((student, index) => (
-          <StudentCard key={index} index={index} student={student} type="training" />
-        ))}
-        
-        <View style={{ height: 40 }} /> 
-      </ScrollView>
+      {/* THÀNH PHẦN: SectionList */}
+      <SectionList
+        sections={rankingData}
+        keyExtractor={(item, index) => item.id + index}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        // Render tiêu đề của mỗi Section
+        renderSectionHeader={({ section: { title, icon, iconColor } }) => (
+          <View style={[styles.sectionHeader, { marginTop: 15 }]}>
+            <MaterialCommunityIcons name={icon} size={24} color={iconColor} />
+            <Text style={styles.sectionTitleModern}>{title}</Text>
+          </View>
+        )}
+        // Render từng item sinh viên
+        renderItem={({ item, index, section }) => (
+          <StudentCard index={index} student={item} type={section.type} />
+        )}
+        ListFooterComponent={<View style={{ height: 40 }} />}
+      />
     </View>
   );
 }
 
-// --- MÀN HÌNH 3: PROFILE (Code cũ bị lỗi ở cuối file của bạn) ---
 const InfoItem = ({ icon, label, value, color, library }) => {
   return (
     <View style={styles.infoItem}>
@@ -157,17 +203,18 @@ const InfoItem = ({ icon, label, value, color, library }) => {
   );
 };
 
+// --- MÀN HÌNH 3: PLAYGROUND (Thêm Checkbox, Radio, Pressable) ---
 const Excercise3 = () => {
   const {
-    inputValue,
-    textValue,
-    handleButtonClick,
-    handleTextClick,
-    handleInputChange,
-    handleTextViewClick,
+    inputValue, textValue, handleButtonClick,
+    handleTextClick, handleInputChange, handleTextViewClick,
   } = useEventHandlers();
 
- return (
+  // State cho Checkbox và RadioButton
+  const [isChecked, setIsChecked] = useState(false);
+  const [selectedRadio, setSelectedRadio] = useState('react');
+
+  return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === "ios" ? "padding" : "height"}
       style={styles.mainContainer}
@@ -176,30 +223,77 @@ const Excercise3 = () => {
         
         <View style={styles.headerSimple}>
           <Text style={styles.headerSimpleTitle}>Playground</Text>
-          <Text style={styles.headerSimpleSubtitle}>Thực hành xử lý sự kiện</Text>
+          <Text style={styles.headerSimpleSubtitle}>Thực hành xử lý sự kiện & UI Components</Text>
         </View>
 
         <View style={styles.playgroundCard}>
-          {/* PHẦN 1: TOUCHABLE & TEXT EVENTS */}
-          <Text style={styles.label}>1. Sự kiện chạm (Touch Events)</Text>
+          <Text style={styles.label}>1. TouchableOpacity vs Pressable</Text>
           
-          <TouchableOpacity 
-            style={styles.actionButton} 
-            onPress={handleTextClick}
-            activeOpacity={0.7}
-          >
+          {/* TouchableOpacity thông thường */}
+          <TouchableOpacity style={styles.actionButton} onPress={handleTextClick} activeOpacity={0.7}>
             <Ionicons name="finger-print" size={24} color="#FFF" />
-            <Text style={styles.actionButtonText}>Chạm vào nút này</Text>
+            <Text style={styles.actionButtonText}>TouchableOpacity (Sẽ mờ đi)</Text>
           </TouchableOpacity>
 
-          <Text style={styles.linkText} onPress={handleTextClick}>
-            Hoặc chạm vào dòng chữ liên kết này
-          </Text>
+          {/* THÀNH PHẦN: Pressable */}
+          {/* Pressable cho phép ta đổi style tùy thuộc vào việc nó có đang bị bấm (pressed) hay không */}
+          <Pressable 
+            style={({ pressed }) => [
+              styles.actionButton,
+              { backgroundColor: pressed ? '#0984e3' : '#74b9ff' } // Đổi màu khi nhấn
+            ]}
+            onPress={() => Alert.alert('Pressable', 'Sự kiện chạm nâng cao!')}
+          >
+            {({ pressed }) => (
+              <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                <Ionicons name="color-wand" size={24} color="#FFF" />
+                <Text style={styles.actionButtonText}>
+                  {pressed ? 'Đang được nhấn...' : 'Pressable (Sẽ đổi màu)'}
+                </Text>
+              </View>
+            )}
+          </Pressable>
 
           <View style={styles.dividerSimple} />
 
-          {/* PHẦN 2: NHẬP LIỆU */}
-          <Text style={styles.label}>2. Nhập liệu & Hiển thị</Text>
+          <Text style={styles.label}>2. Checkbox & RadioButton</Text>
+          
+          {/* THÀNH PHẦN: RadioButton */}
+          <View style={styles.radioGroup}>
+            <Text style={{marginBottom: 10, color: '#555', fontWeight:'bold'}}>Bạn đang học công nghệ nào?</Text>
+            
+            <TouchableOpacity style={styles.checkRow} onPress={() => setSelectedRadio('react')}>
+              <Ionicons 
+                name={selectedRadio === 'react' ? "radio-button-on" : "radio-button-off"} 
+                size={24} color="#6C5CE7" 
+              />
+              <Text style={styles.checkText}>React Native</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.checkRow} onPress={() => setSelectedRadio('android')}>
+              <Ionicons 
+                name={selectedRadio === 'android' ? "radio-button-on" : "radio-button-off"} 
+                size={24} color="#6C5CE7" 
+              />
+              <Text style={styles.checkText}>Android Studio (Java/Kotlin)</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* THÀNH PHẦN: Checkbox */}
+          <View style={{marginTop: 15, marginBottom: 15}}>
+            <TouchableOpacity style={styles.checkRow} onPress={() => setIsChecked(!isChecked)}>
+              <Ionicons 
+                name={isChecked ? "checkbox" : "square-outline"} 
+                size={24} color="#2ECC71" 
+              />
+              <Text style={styles.checkText}>Tôi đồng ý gửi dữ liệu xuống Terminal</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.dividerSimple} />
+
+          {/* PHẦN 3: NHẬP LIỆU */}
+          <Text style={styles.label}>3. Nhập liệu & Hiển thị</Text>
           
           <View style={styles.inputWrapper}>
             <Ionicons name="create-outline" size={20} color="#666" style={{marginRight: 10}} />
@@ -223,6 +317,9 @@ const Excercise3 = () => {
               <Text style={{color: '#4AF626'}}>$ output: </Text> 
               {textValue || 'Chưa có dữ liệu...'}
             </Text>
+            <Text style={[styles.terminalText, {marginTop: 5, color: '#FFBD2E'}]}>
+              $ radio_selected: {selectedRadio}
+            </Text>
           </View>
 
           {/* Cụm nút chức năng */}
@@ -236,8 +333,8 @@ const Excercise3 = () => {
              </TouchableOpacity>
 
              <TouchableOpacity 
-                style={[styles.customBtn, { backgroundColor: '#2ECC71' }]}
-                onPress={handleTextViewClick}
+                style={[styles.customBtn, { backgroundColor: isChecked ? '#2ECC71' : '#BDC3C7' }]}
+                onPress={isChecked ? handleTextViewClick : () => Alert.alert("Lỗi", "Vui lòng tick Checkbox đồng ý trước!")}
              >
                 <Text style={styles.customBtnText}>Gửi dữ liệu xuống Terminal</Text>
                 <Ionicons name="arrow-down-circle-outline" size={20} color="#FFF" />
@@ -263,7 +360,7 @@ export default function App() {
             else if (route.name === 'Bài Tập 2') iconName = focused ? 'person' : 'person-outline';
             return <Ionicons name={iconName} size={size} color={color} />;
           },
-          headerShown: false, // Ẩn header mặc định để dùng giao diện custom
+          headerShown: false,
         })}
       >
         <Tab.Screen name="Profile" component={Excercise1} />
@@ -278,12 +375,11 @@ export default function App() {
 const styles = StyleSheet.create({
   mainContainer: {
     flex: 1,
-    backgroundColor: '#F5F7FA', // Màu nền xám nhẹ hiện đại
+    backgroundColor: '#F5F7FA',
   },
   scrollContent: {
     paddingHorizontal: 16,
   },
-  // HEADER CHUNG
   headerSimple: {
     paddingTop: 60,
     paddingBottom: 20,
@@ -304,12 +400,12 @@ const styles = StyleSheet.create({
     color: '#888',
     marginTop: 5,
   },
-  
-  // STYLE CHO BÀI TẬP 1 (CARD)
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 15,
+    paddingVertical: 5,
+    backgroundColor: '#F5F7FA' // Giúp dính top mượt hơn nếu dùng sticky header
   },
   sectionTitleModern: {
     fontSize: 18,
@@ -324,7 +420,6 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 12,
     alignItems: 'center',
-    // Shadow đẹp
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -372,10 +467,8 @@ const styles = StyleSheet.create({
   scoreValue: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2ECC71', // Màu xanh lá cho điểm
+    color: '#2ECC71',
   },
-
-  // STYLE CHO BÀI TẬP 2 (FORM & INTERACTIVE)
   playgroundCard: {
     backgroundColor: '#FFF',
     marginHorizontal: 16,
@@ -410,18 +503,28 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     fontSize: 16,
   },
-  linkText: {
-    textAlign: 'center',
-    color: '#6C5CE7',
-    textDecorationLine: 'underline',
-    padding: 10,
-    marginBottom: 10,
-  },
   dividerSimple: {
     height: 1,
     backgroundColor: '#EEE',
     marginVertical: 15,
   },
+  // STYLES MỚI CHO CHECKBOX & RADIO
+  radioGroup: {
+    backgroundColor: '#F8F9FA',
+    padding: 15,
+    borderRadius: 10,
+  },
+  checkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  checkText: {
+    marginLeft: 10,
+    fontSize: 15,
+    color: '#333',
+  },
+  //-------------------------------
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -465,7 +568,7 @@ const styles = StyleSheet.create({
   customBtn: {
     flexDirection: 'row',
     paddingVertical: 14,
-    borderRadius: 30, // Nút bo tròn
+    borderRadius: 30,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: "#000",
@@ -480,9 +583,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginRight: 8,
   },
-
-  // Giữ lại style Profile (Exercise 3) cũ của bạn hoặc cập nhật thêm nếu cần
-  // ... (Code cũ của Profile Exercise 3 và Header Background vẫn dùng tốt)
   headerBackground: {
     height: 280,
     backgroundColor: '#1867C0',
@@ -546,5 +646,37 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 5,
   },
-  buttonText: { color: '#FFF', fontSize: 16, fontWeight: 'bold', marginRight: 10 }
+  buttonText: { color: '#FFF', fontSize: 16, fontWeight: 'bold', marginRight: 10 },
+  
+  // STYLES MỚI CHO MODAL
+  modalBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)', // Làm mờ nền phía sau
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: width * 0.8,
+  },
+  modalTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#2C3E50',
+  },
+  modalText: {
+    marginBottom: 10,
+    fontSize: 16,
+    color: '#333',
+  },
 });
