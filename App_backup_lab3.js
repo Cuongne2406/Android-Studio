@@ -1,193 +1,105 @@
 import { 
   StyleSheet, Text, View, Image, ScrollView, TouchableOpacity, 
   Dimensions, TextInput, KeyboardAvoidingView, 
-  Alert, Modal, SectionList, Pressable, Platform, RefreshControl,
-  ActivityIndicator, FlatList
+  Alert, Modal, SectionList, Pressable, Platform, RefreshControl
 } from 'react-native';
 import React, { useState, createContext, useContext, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { top100StudentsByAvgPoint, top10StudentsByAvgTrainingPoint } from './studentStatistics';
-import { Picker } from '@react-native-picker/picker'; // Dùng Picker làm AutoComplete/Spinner drop-down
 
 const { width } = Dimensions.get('window');
 const Tab = createBottomTabNavigator();
-const Stack = createNativeStackNavigator();
 
-// --- CONTEXT ---
+// --- BƯỚC 1: CONTEXT QUẢN LÝ DỮ LIỆU CHUNG (Global State + AsyncStorage) ---
 const AppContext = createContext();
 
 const AppProvider = ({ children }) => {
-  const [isReady, setIsReady] = useState(false); 
+  const [isReady, setIsReady] = useState(false); // Cờ kiểm tra dữ liệu đã load xong chưa
   const [profileAvatar, setProfileAvatar] = useState('https://cdn-icons-png.flaticon.com/512/3135/3135715.png');
   const [profileData, setProfileData] = useState({
-    name: "Nguyễn Trung Cường", id: "123000991", major: "Khoa Công Nghệ Thông Tin",
-    school: "Đại học Lạc Hồng", teacher: "Nguyễn Khắc Hoàng", year: "2023 - 2027",
-    address: "Cơ sở 1 - Biên Hòa", avgPoint: 10, trainingPoint: 10, rank: "Xuất sắc"
+    name: "Nguyễn Trung Cường",
+    id: "123000991",
+    major: "Khoa Công Nghệ Thông Tin",
+    school: "Đại học Lạc Hồng",
+    teacher: "Nguyễn Khắc Hoàng",
+    year: "2023 - 2027",
+    address: "Cơ sở 1 - Biên Hòa",
+    avgPoint: 10,
+    trainingPoint: 10,
+    rank: "Xuất sắc"
   });
 
-  const [studentsData, setStudentsData] = useState({ point: top100StudentsByAvgPoint, training: top10StudentsByAvgTrainingPoint });
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false); // Quản lý trạng thái Đăng nhập
+  const [studentsData, setStudentsData] = useState({
+    point: top100StudentsByAvgPoint,
+    training: top10StudentsByAvgTrainingPoint
+  });
 
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Load dữ liệu từ AsyncStorage khi khởi động app
   useEffect(() => {
     const loadData = async () => {
       try {
         const savedAvatar = await AsyncStorage.getItem('profileAvatar');
         const savedProfile = await AsyncStorage.getItem('profileData');
         const savedTheme = await AsyncStorage.getItem('isDarkMode');
-        const savedLogin = await AsyncStorage.getItem('isLoggedIn');
         
         if (savedAvatar) setProfileAvatar(savedAvatar);
         if (savedProfile) setProfileData(JSON.parse(savedProfile));
         if (savedTheme !== null) setIsDarkMode(JSON.parse(savedTheme));
-        if (savedLogin !== null) setIsLoggedIn(JSON.parse(savedLogin));
-      } catch (error) { console.log(error); } finally { setIsReady(true); }
+      } catch (error) {
+        console.log("Lỗi load dữ liệu:", error);
+      } finally {
+        setIsReady(true);
+      }
     };
     loadData();
   }, []);
 
-  const updateAvatar = async (uri) => { setProfileAvatar(uri); await AsyncStorage.setItem('profileAvatar', uri); };
-  const updateProfileData = async (newData) => { setProfileData(newData); await AsyncStorage.setItem('profileData', JSON.stringify(newData)); };
-  const toggleDarkMode = async (value) => { setIsDarkMode(value); await AsyncStorage.setItem('isDarkMode', JSON.stringify(value)); };
-  const loginApp = async () => { setIsLoggedIn(true); await AsyncStorage.setItem('isLoggedIn', 'true'); };
-  const logoutApp = async () => { setIsLoggedIn(false); await AsyncStorage.setItem('isLoggedIn', 'false'); };
+  // Hàm helper để vừa gọi set state vừa lưu vào AsyncStorage
+  const updateAvatar = async (uri) => {
+    setProfileAvatar(uri);
+    await AsyncStorage.setItem('profileAvatar', uri);
+  };
 
-  if (!isReady) return null; 
+  const updateProfileData = async (newData) => {
+    setProfileData(newData);
+    await AsyncStorage.setItem('profileData', JSON.stringify(newData));
+  };
+
+  const toggleDarkMode = async (value) => {
+    setIsDarkMode(value);
+    await AsyncStorage.setItem('isDarkMode', JSON.stringify(value));
+  };
+
+  if (!isReady) return null; // Hoặc trả về 1 ActivityIndicator xoay vòng
 
   return (
     <AppContext.Provider value={{
-      profileAvatar, updateAvatar, profileData, updateProfileData,
-      studentsData, setStudentsData, isDarkMode, toggleDarkMode,
-      isLoggedIn, loginApp, logoutApp
+      profileAvatar, updateAvatar, 
+      profileData, updateProfileData,
+      studentsData, setStudentsData,
+      isDarkMode, toggleDarkMode
     }}>
       {children}
     </AppContext.Provider>
   );
 };
 
-// --- MÀN HÌNH ĐĂNG NHẬP (LAB 4 - YÊU CẦU 5) ---
-const LoginScreen = () => {
-   const { loginApp, isDarkMode } = useContext(AppContext);
-   const [mssv, setMssv] = useState('');
-   const [password, setPassword] = useState('');
-   const [showPassword, setShowPassword] = useState(false);
-   const [loading, setLoading] = useState(false);
-
-   // Dùng Picker Spinner làm AutoComplete gợi ý MSSV (Lab 4 - Yêu cầu 2)
-   const accounts = [
-       { label: "Nhập hoặc Chọn MSSV", value: "" },
-       { label: "123000991 - Nguyễn Trung Cường", value: "123000991" },
-       { label: "123000111 - Nguyễn Hậu", value: "123000111" },
-       { label: "123000194 - Phú Trần", value: "123000194" }
-   ];
-
-   const handleLogin = () => {
-       if(!mssv || !password) {
-           Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin!");
-           return;
-       }
-       setLoading(true);
-       setTimeout(() => {
-           setLoading(false);
-           // Hardcode login cho Demo
-           if(password === "123456") {
-               loginApp();
-           } else {
-               Alert.alert("Lỗi", "Mật khẩu sai! Gợi ý: 123456");
-           }
-       }, 2000); // Spinner quay 2 giây
-   };
-
-   return (
-       // Bọc KeyboardAvoidingView (Lab 4 - Yêu cầu 5)
-       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{flex: 1, backgroundColor: isDarkMode ? '#1e272e' : '#F5F7FA', justifyContent: 'center', alignItems: 'center'}}>
-           <View style={[styles.loginCard, {backgroundColor: isDarkMode ? '#2d3436' : '#FFF'}]}>
-               <Image source={{uri: 'https://cdn-icons-png.flaticon.com/512/2950/2950942.png'}} style={styles.loginLogo} />
-               <Text style={[styles.loginTitle, {color: isDarkMode ? '#FFF' : '#2C3E50'}]}>Quản Lý Sinh Viên</Text>
-               <Text style={styles.loginSub}>Đăng nhập để tiếp tục</Text>
-               
-               {/* 1. Spinner/AutoComplete Picker */}
-               <View style={styles.inputGroup}>
-                   <Text style={[styles.inputLabel, {color: isDarkMode ? '#b2bec3' : '#7F8C8D'}]}>Tài khoản (Trích xuất từ Spinner)</Text>
-                   <View style={[styles.inputWrapper, {backgroundColor: isDarkMode ? '#3d4447' : '#F5F7FA', borderColor: isDarkMode ? '#3d4447' : '#E1E1E1'}]}>
-                       <Ionicons name="person" size={20} color="#666" style={{marginRight: 10}} />
-                       <Picker 
-                            selectedValue={mssv} 
-                            onValueChange={(itemValue) => setMssv(itemValue)} 
-                            style={[{flex: 1, color: isDarkMode ? '#FFF' : '#333', backgroundColor: 'transparent', height: 50, borderWidth: 0}, Platform.OS === 'web' && {outline: 'none'}]}
-                            dropdownIconColor={isDarkMode ? '#FFF' : '#333'}
-                       >
-                           {accounts.map((acc, index) => (
-                               <Picker.Item 
-                                    key={index} 
-                                    label={acc.label} 
-                                    value={acc.value} 
-                                    color={isDarkMode ? '#000' : '#333'} // Cố định màu chữ Dropdown khi xổ ra
-                               />
-                           ))}
-                       </Picker>
-                   </View>
-               </View>
-
-               {/* 2. Password có ẩn hiện Mật khẩu */}
-               <View style={styles.inputGroup}>
-                   <Text style={[styles.inputLabel, {color: isDarkMode ? '#b2bec3' : '#7F8C8D'}]}>Mật khẩu</Text>
-                   <View style={[styles.inputWrapper, {backgroundColor: isDarkMode ? '#3d4447' : '#F5F7FA', borderColor: isDarkMode ? '#3d4447' : '#E1E1E1'}]}>
-                       <Ionicons name="lock-closed" size={20} color="#666" style={{marginRight: 10}} />
-                       <TextInput 
-                          style={[styles.inputModern, {color: isDarkMode ? '#FFF' : '#333'}]}
-                          placeholder="Mật khẩu là 123456"
-                          placeholderTextColor="#999"
-                          secureTextEntry={!showPassword}
-                          value={password}
-                          onChangeText={setPassword}
-                       />
-                       <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                           <Ionicons name={showPassword ? "eye-off" : "eye"} size={22} color="#666" />
-                       </TouchableOpacity>
-                   </View>
-               </View>
-
-               {/* 3. Spinner Loading Button */}
-               <TouchableOpacity 
-                   style={[styles.customBtn, { marginTop: 20, backgroundColor: loading ? '#bdc3c7' : '#4A90E2' }]} 
-                   onPress={handleLogin}
-                   disabled={loading}
-               >
-                   {loading ? (
-                       <ActivityIndicator size="small" color="#FFF" />
-                   ) : (
-                       <Text style={styles.customBtnText}>Đăng Nhập</Text>
-                   )}
-               </TouchableOpacity>
-           </View>
-       </KeyboardAvoidingView>
-   )
-}
-
-// --- MÀN HÌNH 1: CHI TIẾT HỒ SƠ & GRID VIEW CÁC KHOA (LAB 4 - YÊU CẦU 3) ---
+// --- MÀN HÌNH 1: CHI TIẾT HỒ SƠ ---
 const Excercise1 = () => {
   const { profileAvatar, updateAvatar, profileData, updateProfileData, isDarkMode } = useContext(AppContext);
   const [modalVisible, setModalVisible] = useState(false);
-  const [editModalVisible, setEditModalVisible] = useState(false); 
+  const [editModalVisible, setEditModalVisible] = useState(false); // Modal Editor
+  
+  // State tạm tĩnh cho việc edit form Profile
   const [editName, setEditName] = useState(profileData.name);
   const [editId, setEditId] = useState(profileData.id);
-
-  // Data cho lưới GridView
-  const gridData = [
-     { id: '1', title: 'Công Nghệ Thông Tin', icon: 'laptop', color: '#4A90E2' },
-     { id: '2', title: 'Khoa Cơ Điện', icon: 'cog', color: '#E67E22' },
-     { id: '3', title: 'Khoa Dược', icon: 'flask', color: '#2ECC71' },
-     { id: '4', title: 'Ngôn Ngữ Anh', icon: 'alphabetical', color: '#9B59B6' },
-     { id: '5', title: 'Quản Trị Kinh Doanh', icon: 'chart-pie', color: '#F1C40F' },
-     { id: '6', title: 'Luật Kinh Tế', icon: 'scale-balance', color: '#E74C3C' }
-  ];
 
   const bgColor = isDarkMode ? '#1e272e' : '#F5F7FA';
   const cardColor = isDarkMode ? '#2d3436' : '#FFF';
@@ -197,21 +109,35 @@ const Excercise1 = () => {
 
   const pickImage = async () => {
     const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (permissionResult.granted === false) return;
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], allowsEditing: true, aspect: [1, 1], quality: 0.8 });
-    if (!result.canceled) updateAvatar(result.assets[0].uri); 
+    if (permissionResult.granted === false) {
+      Alert.alert("Lỗi", "Bạn chưa cho phép truy cập thư viện ảnh!");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'], 
+      allowsEditing: true, 
+      aspect: [1, 1], 
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      updateAvatar(result.assets[0].uri); 
+    }
   };
 
   const saveProfile = () => {
-    if(!editName.trim() || !editId.trim()){ Alert.alert("Lỗi", "Vui lòng không bỏ trống thông tin!"); return; }
+    if(!editName.trim() || !editId.trim()){
+       Alert.alert("Lỗi", "Vui lòng không bỏ trống thông tin!");
+       return;
+    }
     updateProfileData({ ...profileData, name: editName, id: editId });
     setEditModalVisible(false);
   };
 
   return (
-    <ScrollView style={{flex: 1, backgroundColor: bgColor}} showsVerticalScrollIndicator={false}>
-      {/* (LAB 4 - Yêu Cầu 4): Đổi màu StatusBar */}
-      <StatusBar style="light" backgroundColor="#1867C0" />
+    <ScrollView style={{flex: 1, backgroundColor: bgColor}}>
+      <StatusBar style="light" />
       <View style={styles.headerBackground}>
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle}>HỒ SƠ SINH VIÊN</Text>
@@ -222,9 +148,19 @@ const Excercise1 = () => {
 
       <View style={styles.contentContainer}>
         <View style={[styles.card, {backgroundColor: cardColor}]}>
-          <TouchableOpacity style={{position: 'absolute', top: 25, right: 25}} onPress={() => { setEditName(profileData.name); setEditId(profileData.id); setEditModalVisible(true) }}>
+          
+          {/* Nút nhỏ góc trên bên phải để bật Chế độ Edit */}
+          <TouchableOpacity 
+             style={{position: 'absolute', top: 25, right: 25}}
+             onPress={() => {
+                setEditName(profileData.name); 
+                setEditId(profileData.id); 
+                setEditModalVisible(true)
+             }}
+          >
              <Ionicons name="create" size={24} color="#3498DB" />
           </TouchableOpacity>
+
           <TouchableOpacity style={styles.avatarWrapper} onPress={pickImage}>
              <Image source={{ uri: profileAvatar }} style={styles.avatar} />
             <View style={styles.activeBadge} />
@@ -232,38 +168,28 @@ const Excercise1 = () => {
               <Ionicons name="camera" size={14} color="#FFF" />
             </View>
           </TouchableOpacity>
+
           <Text style={[styles.nameText, {color: textColor}]}>{profileData.name}</Text>
           <Text style={[styles.idText, {color: subTextColor}]}>MSSV: {profileData.id}</Text>
           <Text style={styles.majorText}>{profileData.major}</Text>
-          
-          <TouchableOpacity style={[styles.buttonShadow, {width: '80%', paddingVertical: 12}]} onPress={() => setModalVisible(true)}>
+
+          <View style={[styles.divider, {backgroundColor: dividerColor}]} />
+
+          <View style={styles.infoList}>
+            <InfoItem isDark={isDarkMode} icon="school-outline" label="Trường" value={profileData.school} color="#4A90E2"/>
+            <InfoItem isDark={isDarkMode} icon="account-tie" library="MaterialCommunityIcons" label="GVCN" value={profileData.teacher} color="#FF6B6B"/>
+            <InfoItem isDark={isDarkMode} icon="calendar-outline" label="Niên khóa" value={profileData.year} color="#F5A623"/>
+            <InfoItem isDark={isDarkMode} icon="location-outline" label="Cơ sở" value={profileData.address} color="#7ED321"/>
+          </View>
+
+          <TouchableOpacity style={styles.buttonShadow} onPress={() => setModalVisible(true)}>
             <Text style={styles.buttonText}>Xem Bảng Điểm</Text>
-            <Ionicons name="arrow-forward" size={18} color="#fff" />
+            <Ionicons name="arrow-forward" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* LAB 4 - YÊU CẦU 3: Sử dụng GridView */}
-      <View style={{paddingHorizontal: 20, marginTop: 15}}>
-          <Text style={[styles.sectionTitleModern, {color: textColor, marginBottom: 15, marginLeft: 0}]}>Danh Sách Các Khoa</Text>
-          <FlatList 
-             data={gridData}
-             keyExtractor={(item) => item.id}
-             numColumns={2} 
-             scrollEnabled={false} // Vì đang bọc bên trong ScrollView cha
-             columnWrapperStyle={{justifyContent: 'space-between', marginBottom: 15}}
-             renderItem={({item}) => (
-                 <View style={[styles.gridItem, {backgroundColor: cardColor}]}>
-                      <View style={[styles.gridIcon, {backgroundColor: item.color + '20'}]}>
-                          <MaterialCommunityIcons name={item.icon} size={30} color={item.color} />
-                      </View>
-                      <Text style={[styles.gridTitle, {color: textColor}]} numberOfLines={2} textAlign="center">{item.title}</Text>
-                 </View>
-             )}
-          />
-      </View>
-      <View style={{height: 30}} />
-
+      {/* MODAL 1: XEM BẢNG ĐIỂM */}
       <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)} >
         <View style={styles.modalBackground}>
           <View style={[styles.modalView, {backgroundColor: cardColor}]}>
@@ -280,19 +206,32 @@ const Excercise1 = () => {
         </View>
       </Modal>
 
+      {/* MODAL 2: CHỈNH SỬA HỒ SƠ */}
       <Modal animationType="fade" transparent={true} visible={editModalVisible} onRequestClose={() => setEditModalVisible(false)} >
          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalBackground}>
           <View style={[styles.modalView, {backgroundColor: cardColor}]}>
             <Text style={[styles.modalTitle, {color: textColor, marginTop: 10}]}>Chỉnh Sửa Hồ Sơ</Text>
+            
             <View style={{width: '100%', marginTop: 20}}>
                 <Text style={[styles.label, {color: subTextColor}]}>Họ và Tên</Text>
-                <TextInput style={[styles.inputModern, {backgroundColor: isDarkMode?'#1e272e':'#F5F7FA', color: textColor, marginBottom: 15, paddingHorizontal: 15}]} value={editName} onChangeText={setEditName}/>
+                <TextInput 
+                   style={[styles.inputModern, {backgroundColor: isDarkMode?'#1e272e':'#F5F7FA', color: textColor, marginBottom: 15}]}
+                   value={editName} onChangeText={setEditName}
+                />
                 <Text style={[styles.label, {color: subTextColor}]}>Mã Số Sinh Viên</Text>
-                <TextInput style={[styles.inputModern, {backgroundColor: isDarkMode?'#1e272e':'#F5F7FA', color: textColor, paddingHorizontal: 15}]} value={editId} onChangeText={setEditId} keyboardType="numeric"/>
+                <TextInput 
+                   style={[styles.inputModern, {backgroundColor: isDarkMode?'#1e272e':'#F5F7FA', color: textColor}]}
+                   value={editId} onChangeText={setEditId} keyboardType="numeric"
+                />
             </View>
+
             <View style={{flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 30}}>
-                <Pressable style={[styles.customBtn, {backgroundColor: '#95a5a6', width: '45%'}]} onPress={() => setEditModalVisible(false)}><Text style={styles.customBtnText}>Hủy</Text></Pressable>
-                <Pressable style={[styles.customBtn, {backgroundColor: '#2ECC71', width: '45%'}]} onPress={saveProfile}><Text style={styles.customBtnText}>Lưu</Text></Pressable>
+                <Pressable style={[styles.customBtn, {backgroundColor: '#95a5a6', width: '45%'}]} onPress={() => setEditModalVisible(false)}>
+                   <Text style={styles.customBtnText}>Hủy</Text>
+                </Pressable>
+                <Pressable style={[styles.customBtn, {backgroundColor: '#2ECC71', width: '45%'}]} onPress={saveProfile}>
+                   <Text style={styles.customBtnText}>Lưu</Text>
+                </Pressable>
             </View>
           </View>
          </KeyboardAvoidingView>
@@ -302,19 +241,41 @@ const Excercise1 = () => {
   );
 }
 
-// Thẻ sinh viên component 
+// Component thẻ sinh viên
 const StudentCard = ({ index, student, type, onPress, isDark }) => {
-  const getRankColor = (idx) => { if (idx === 0) return '#FFD700'; if (idx === 1) return '#C0C0C0'; if (idx === 2) return '#CD7F32'; return '#bdc3c7'; };
+  const getRankColor = (idx) => {
+    if (idx === 0) return '#FFD700';
+    if (idx === 1) return '#C0C0C0';
+    if (idx === 2) return '#CD7F32';
+    return '#bdc3c7'; // Rank thường bạc
+  };
+  
   const cardColor = isDark ? '#2d3436' : '#FFF';
   const textColor = isDark ? '#FFF' : '#333';
   const subTextColor = isDark ? '#b2bec3' : '#999';
   const scoreBgColor = isDark ? '#3d4447' : '#F8F9FA';
 
   return (
-    <Pressable style={({ pressed }) => [ styles.cardContainer, { backgroundColor: cardColor, transform: [{ scale: pressed ? 0.98 : 1 }], opacity: pressed ? 0.8 : 1 }]} onPress={() => onPress(student, type, index)}>
-      <View style={[styles.rankBadge, { backgroundColor: getRankColor(index) }]}><Text style={styles.rankText}>{index + 1}</Text></View>
-      <View style={styles.infoContainer}><Text style={[styles.studentName, {color: textColor}]}>{student.name}</Text><Text style={[styles.studentId, {color: subTextColor}]}>MSSV: {student.id || student.mssv || 'Đang cập nhật'}</Text></View>
-      <View style={[styles.scoreContainer, {backgroundColor: scoreBgColor}]}><Text style={styles.scoreLabel}>{type === 'point' ? 'Điểm TB' : 'ĐRL'}</Text><Text style={styles.scoreValue}>{type === 'point' ? student.avgPoint : student.avgTrainingPoint}</Text></View>
+    <Pressable 
+        style={({ pressed }) => [
+            styles.cardContainer,
+            { backgroundColor: cardColor, transform: [{ scale: pressed ? 0.98 : 1 }], opacity: pressed ? 0.8 : 1 }
+        ]}
+        onPress={() => onPress(student, type, index)}
+    >
+      <View style={[styles.rankBadge, { backgroundColor: getRankColor(index) }]}>
+        <Text style={styles.rankText}>{index + 1}</Text>
+      </View>
+      <View style={styles.infoContainer}>
+        <Text style={[styles.studentName, {color: textColor}]}>{student.name}</Text>
+        <Text style={[styles.studentId, {color: subTextColor}]}>MSSV: {student.id || student.mssv || 'Đang cập nhật'}</Text>
+      </View>
+      <View style={[styles.scoreContainer, {backgroundColor: scoreBgColor}]}>
+        <Text style={styles.scoreLabel}>{type === 'point' ? 'Điểm TB' : 'ĐRL'}</Text>
+        <Text style={styles.scoreValue}>
+          {type === 'point' ? student.avgPoint : student.avgTrainingPoint}
+        </Text>
+      </View>
     </Pressable>
   );
 };
@@ -323,22 +284,33 @@ const StudentCard = ({ index, student, type, onPress, isDark }) => {
 const Excercise2 = () => {
   const { studentsData, setStudentsData, isDarkMode } = useContext(AppContext);
   const [selectedStudent, setSelectedStudent] = useState(null); 
-  const [refreshing, setRefreshing] = useState(false); 
+  const [refreshing, setRefreshing] = useState(false); // State cho Pull-to-refresh
 
   const rankingData = [
-    { title: 'Top Điểm Học Tập', icon: 'school', iconColor: '#4A90E2', data: studentsData.point, type: 'point' },
-    { title: 'Top Điểm Rèn Luyện', icon: 'arm-flex', iconColor: '#FF6B6B', data: studentsData.training, type: 'training' }
+    {
+      title: 'Top Điểm Học Tập', icon: 'school', iconColor: '#4A90E2',
+      data: studentsData.point, type: 'point'
+    },
+    {
+      title: 'Top Điểm Rèn Luyện', icon: 'arm-flex', iconColor: '#FF6B6B',
+      data: studentsData.training, type: 'training'
+    }
   ];
 
+  // Logic Vuốt để tải lại
   const onRefresh = () => {
      setRefreshing(true);
+     // Giả lập delay giống như gọi API load dữ liệu
      setTimeout(() => {
+         // Reset data về full danh sách
          setStudentsData({ point: top100StudentsByAvgPoint, training: top10StudentsByAvgTrainingPoint });
          setRefreshing(false);
      }, 1500);
   };
 
-  const handleStudentPress = (student, type, index) => { setSelectedStudent({ ...student, type, rank: index + 1 }); }
+  const handleStudentPress = (student, type, index) => {
+      setSelectedStudent({ ...student, type, rank: index + 1 });
+  }
 
   const bgColor = isDarkMode ? '#1e272e' : '#F5F7FA';
   const textColor = isDarkMode ? '#f5f6fa' : '#333';
@@ -347,8 +319,7 @@ const Excercise2 = () => {
 
   return (
     <View style={[styles.mainContainer, { backgroundColor: bgColor }]}>
-      {/* LAB 4 - YÊU CẦU 4: Đổi màu StatusBar */}
-      <StatusBar style={isDarkMode ? "light" : "dark"} backgroundColor={headerBgColor} />
+      <StatusBar style={isDarkMode ? "light" : "dark"} />
       <View style={[styles.headerSimple, {backgroundColor: headerBgColor, borderBottomColor: dividerColor}]}>
         <Text style={[styles.headerSimpleTitle, {color: textColor}]}>Bảng Xếp Hạng</Text>
         <Text style={styles.headerSimpleSubtitle}>Vuốt xuống để làm mới danh sách</Text>
@@ -359,46 +330,75 @@ const Excercise2 = () => {
         keyExtractor={(item, index) => item.id + index}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        refreshControl={ <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#4A90E2', '#FF6B6B']} tintColor={isDarkMode ? '#FFF' : '#4A90E2'} /> }
+        
+        // --- ỨNG DỤNG PULL TO REFRESH ---
+        refreshControl={
+           <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#4A90E2', '#FF6B6B']} // Đổi màu loading spinner rực rỡ
+              tintColor={isDarkMode ? '#FFF' : '#4A90E2'}
+           />
+        }
+        
         renderSectionHeader={({ section: { title, icon, iconColor } }) => (
           <View style={[styles.sectionHeader, { backgroundColor: bgColor }]}>
             <MaterialCommunityIcons name={icon} size={24} color={iconColor} />
             <Text style={[styles.sectionTitleModern, {color: textColor}]}>{title}</Text>
           </View>
         )}
-        renderItem={({ item, index, section }) => ( <StudentCard isDark={isDarkMode} index={index} student={item} type={section.type} onPress={handleStudentPress} /> )}
+        renderItem={({ item, index, section }) => (
+          <StudentCard isDark={isDarkMode} index={index} student={item} type={section.type} onPress={handleStudentPress} />
+        )}
         ListFooterComponent={<View style={{ height: 40 }} />}
       />
 
+      {/* Modal chi tiết hiển thị cho phép Dark Mode */}
       <Modal visible={selectedStudent !== null} animationType="fade" transparent={true}>
           <View style={styles.modalBackground}>
               <View style={[styles.modalView, {backgroundColor: headerBgColor}]}>
                  {selectedStudent && (
                      <>
-                        <View style={[styles.modalHeaderDecor, {backgroundColor: selectedStudent.type === 'point' ? '#4A90E2' : '#FF6B6B'}]}><MaterialCommunityIcons name="medal" size={40} color="#FFF" /></View>
+                        <View style={[styles.modalHeaderDecor, {backgroundColor: selectedStudent.type === 'point' ? '#4A90E2' : '#FF6B6B'}]}>
+                             <MaterialCommunityIcons name="medal" size={40} color="#FFF" />
+                        </View>
                         <Text style={[styles.modalTitle, {marginTop: 40, color: textColor}]}>{selectedStudent.name}</Text>
                         <Text style={styles.idText}>MSSV: {selectedStudent.id || selectedStudent.mssv}</Text>
                         <View style={[styles.dividerSimple, {backgroundColor: dividerColor, width: '100%'}]} />
                         <View style={{flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginBottom: 15}}>
-                            <View style={{alignItems: 'center'}}><Text style={styles.infoLabel}>Xếp hạng</Text><Text style={{fontSize: 22, fontWeight: 'bold', color: '#E67E22'}}>#{selectedStudent.rank}</Text></View>
-                            <View style={{alignItems: 'center'}}><Text style={styles.infoLabel}>{selectedStudent.type === 'point' ? 'Điểm TB' : 'ĐRL'}</Text><Text style={{fontSize: 22, fontWeight: 'bold', color: '#2ECC71'}}>{selectedStudent.type === 'point' ? selectedStudent.avgPoint : selectedStudent.avgTrainingPoint}</Text></View>
+                            <View style={{alignItems: 'center'}}>
+                                <Text style={styles.infoLabel}>Xếp hạng</Text>
+                                <Text style={{fontSize: 22, fontWeight: 'bold', color: '#E67E22'}}>#{selectedStudent.rank}</Text>
+                            </View>
+                            <View style={{alignItems: 'center'}}>
+                                <Text style={styles.infoLabel}>{selectedStudent.type === 'point' ? 'Điểm TB' : 'ĐRL'}</Text>
+                                <Text style={{fontSize: 22, fontWeight: 'bold', color: '#2ECC71'}}>
+                                    {selectedStudent.type === 'point' ? selectedStudent.avgPoint : selectedStudent.avgTrainingPoint}
+                                </Text>
+                            </View>
                         </View>
-                        <Pressable style={styles.customBtn} onPress={() => setSelectedStudent(null)}><Text style={styles.customBtnText}>Tuyệt vời</Text></Pressable>
+                        <Pressable style={styles.customBtn} onPress={() => setSelectedStudent(null)}>
+                            <Text style={styles.customBtnText}>Tuyệt vời</Text>
+                        </Pressable>
                      </>
                  )}
               </View>
           </View>
       </Modal>
+
     </View>
   );
 }
 
-// Info Item Màn hình 1
 const InfoItem = ({ icon, label, value, color, library, isDark }) => {
   return (
     <View style={styles.infoItem}>
       <View style={[styles.iconContainer, { backgroundColor: color + '20' }]}>
-        {library === 'MaterialCommunityIcons' ? ( <MaterialCommunityIcons name={icon} size={22} color={color} /> ) : ( <Ionicons name={icon} size={22} color={color} /> )}
+        {library === 'MaterialCommunityIcons' ? (
+           <MaterialCommunityIcons name={icon} size={22} color={color} />
+        ) : (
+           <Ionicons name={icon} size={22} color={color} />
+        )}
       </View>
       <View style={styles.infoTextContainer}>
         <Text style={styles.infoLabel}>{label}</Text>
@@ -410,15 +410,19 @@ const InfoItem = ({ icon, label, value, color, library, isDark }) => {
 
 // --- MÀN HÌNH 3: BỘ LỌC VÀ CÀI ĐẶT ---
 const Excercise3 = () => {
-  const { isDarkMode, toggleDarkMode, studentsData, setStudentsData, logoutApp } = useContext(AppContext);
+  const { isDarkMode, toggleDarkMode, studentsData, setStudentsData } = useContext(AppContext);
   const [searchText, setSearchText] = useState('');
   const [isAgree, setIsAgree] = useState(false);
 
   const filterStudents = () => {
-     if(!searchText.trim()) { Alert.alert("Thiếu thông tin", "Vui lòng nhập tên sinh viên cần tìm."); return; }
+     if(!searchText.trim()) {
+         Alert.alert("Thiếu thông tin", "Vui lòng nhập tên sinh viên cần tìm.");
+         return;
+     }
      const lowerSearch = searchText.toLowerCase();
      const filteredPoints = top100StudentsByAvgPoint.filter(s => s.name.toLowerCase().includes(lowerSearch));
      const filteredTraining = top10StudentsByAvgTrainingPoint.filter(s => s.name.toLowerCase().includes(lowerSearch));
+     
      setStudentsData({ point: filteredPoints, training: filteredTraining });
      Alert.alert("Thành công", `Đã lọc danh sách theo từ khóa: "${searchText}"\nHãy sang Tab "Xếp Hạng" để xem kết quả!`);
   };
@@ -433,7 +437,7 @@ const Excercise3 = () => {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={[styles.mainContainer, {backgroundColor: bgColor}]}>
       <ScrollView contentContainerStyle={{ paddingBottom: 30 }} showsVerticalScrollIndicator={false}>
-      <StatusBar style={isDarkMode ? "light" : "dark"} backgroundColor={cardColor} />
+        
         <View style={[styles.headerSimple, {backgroundColor: cardColor, borderBottomColor: dividerColor}]}>
           <Text style={[styles.headerSimpleTitle, {color:textColor}]}>Cài Đặt & Bộ Lọc</Text>
           <Text style={styles.headerSimpleSubtitle}>Ảnh hưởng trực tiếp đến App</Text>
@@ -453,28 +457,38 @@ const Excercise3 = () => {
               <Text style={[styles.checkText, {color: textColor}]}>Chế độ Tối (Dark Mode)</Text>
             </TouchableOpacity>
           </View>
+
           <View style={[styles.dividerSimple, {backgroundColor: dividerColor}]} />
+
           <Text style={[styles.label, {color: subTextColor}]}>2. Lọc Danh Sách Sinh Viên</Text>
           <View style={[styles.inputWrapper, {backgroundColor: sectionBgColor, borderColor: sectionBgColor}]}>
             <Ionicons name="search" size={20} color={subTextColor} style={{marginRight: 10}} />
-            <TextInput style={[styles.inputModern, {color: textColor}]} placeholder="Nhập tên sinh viên VD: Cường" placeholderTextColor={subTextColor} value={searchText} onChangeText={setSearchText} />
+            <TextInput
+              style={[styles.inputModern, {color: textColor}]}
+              placeholder="Nhập tên sinh viên VD: Cường"
+              placeholderTextColor={subTextColor}
+              value={searchText}
+              onChangeText={setSearchText}
+            />
           </View>
+
           <View style={{marginTop: 5, marginBottom: 15}}>
             <TouchableOpacity style={styles.checkRow} onPress={() => setIsAgree(!isAgree)}>
               <Ionicons name={isAgree ? "checkbox" : "square-outline"} size={24} color="#2ECC71" />
               <Text style={[styles.checkText, {color: textColor}]}>Cho phép thay đổi trạng thái danh sách</Text>
             </TouchableOpacity>
           </View>
-          <Pressable style={({ pressed }) => [ styles.actionButton, { backgroundColor: !isAgree ? '#BDC3C7' : (pressed ? '#27ae60' : '#2ECC71') } ]} disabled={!isAgree} onPress={filterStudents}>
+
+          <Pressable 
+             style={({ pressed }) => [
+                styles.actionButton,
+                { backgroundColor: !isAgree ? '#BDC3C7' : (pressed ? '#27ae60' : '#2ECC71') }
+             ]}
+             disabled={!isAgree}
+             onPress={filterStudents}
+          >
             <Ionicons name="filter" size={20} color="#FFF" />
             <Text style={styles.actionButtonText}>Thực Hiện Lọc Bộ Nhớ</Text>
-          </Pressable>
-
-          <View style={[styles.dividerSimple, {backgroundColor: dividerColor}]} />
-          
-          <Pressable style={[styles.actionButton, {backgroundColor: '#e74c3c'}]} onPress={logoutApp}>
-            <Ionicons name="log-out" size={20} color="#FFF" />
-            <Text style={styles.actionButtonText}>Đăng Xuất</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -482,10 +496,29 @@ const Excercise3 = () => {
   );
 }
 
+// Custom component để bọc Bottom Tabs, hứng được isDarkMode từ Context
 function MainTabs() {
    const { isDarkMode } = useContext(AppContext);
    return (
-       <Tab.Navigator initialRouteName="Profile" screenOptions={({ route }) => ({ tabBarIcon: ({ focused, color, size }) => { let iconName; if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline'; else if (route.name === 'Bài Tập 1') iconName = focused ? 'list' : 'list-outline'; else if (route.name === 'Bài Tập 2') iconName = focused ? 'options' : 'options-outline'; return <Ionicons name={iconName} size={size} color={color} />; }, headerShown: false, tabBarStyle: { backgroundColor: isDarkMode ? '#1e272e' : '#FFFFFF', borderTopColor: isDarkMode ? '#2d3436' : '#E0E0E0', }, tabBarActiveTintColor: isDarkMode ? '#4A90E2' : '#1867C0', tabBarInactiveTintColor: isDarkMode ? '#7f8fa6' : '#8e8e8e', })}>
+       <Tab.Navigator initialRouteName="Profile"
+            screenOptions={({ route }) => ({
+              tabBarIcon: ({ focused, color, size }) => {
+                let iconName;
+                if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
+                else if (route.name === 'Bài Tập 1') iconName = focused ? 'list' : 'list-outline';
+                else if (route.name === 'Bài Tập 2') iconName = focused ? 'options' : 'options-outline';
+                return <Ionicons name={iconName} size={size} color={color} />;
+              },
+              headerShown: false,
+              // Áp dụng Dark Mode cho thanh Tab dưới cùng
+              tabBarStyle: {
+                 backgroundColor: isDarkMode ? '#1e272e' : '#FFFFFF',
+                 borderTopColor: isDarkMode ? '#2d3436' : '#E0E0E0',
+              },
+              tabBarActiveTintColor: isDarkMode ? '#4A90E2' : '#1867C0', // Xanh nước biển
+              tabBarInactiveTintColor: isDarkMode ? '#7f8fa6' : '#8e8e8e',
+            })}
+          >
             <Tab.Screen name="Profile" component={Excercise1} options={{title: "Hồ Sơ"}}/>
             <Tab.Screen name="Bài Tập 1" component={Excercise2} options={{title: "Xếp Hạng"}}/>
             <Tab.Screen name="Bài Tập 2" component={Excercise3} options={{title: "Cài Đặt"}}/>
@@ -493,31 +526,18 @@ function MainTabs() {
    )
 }
 
-function AuthStack() {
-   const { isLoggedIn } = useContext(AppContext);
-   return (
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {isLoggedIn ? (
-          <Stack.Screen name="Main" component={MainTabs} />
-        ) : (
-          <Stack.Screen name="Login" component={LoginScreen} />
-        )}
-      </Stack.Navigator>
-   );
-}
-
-// --- APP ROOT ---
+// --- APP COMPONENT CHÍNH ---
 export default function App() {
   return (
     <AppProvider>
         <NavigationContainer>
-           <AuthStack />
+           <MainTabs />
         </NavigationContainer>
     </AppProvider>
   );
 }
 
-// --- STYLES GIỮ NGUYÊN (THÊM CHO LOGIN VÀ GRID) ---
+// --- STYLES GIỮ NGUYÊN HOẶC TINH CHỈNH MỘT ÍT ---
 const styles = StyleSheet.create({
   mainContainer: { flex: 1, backgroundColor: '#F5F7FA' },
   scrollContent: { paddingHorizontal: 16 },
@@ -544,7 +564,7 @@ const styles = StyleSheet.create({
   checkRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
   checkText: { marginLeft: 10, fontSize: 15, color: '#333' },
   inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F5F7FA', borderRadius: 12, paddingHorizontal: 15, borderWidth: 1, borderColor: '#E1E1E1', marginBottom: 15 },
-  inputModern: { flex: 1, height: 50, fontSize: 16, color: '#333' },
+  inputModern: { flex: 1, height: 50, fontSize: 16, color: '#333', paddingHorizontal: 10, borderRadius: 10 },
   customBtn: { flexDirection: 'row', paddingVertical: 14, backgroundColor: '#4A90E2', borderRadius: 30, alignItems: 'center', justifyContent: 'center', width: '100%' },
   customBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 15 },
   headerBackground: { height: 280, backgroundColor: '#1867C0', paddingTop: 60, paddingHorizontal: 20, position: 'relative', overflow: 'hidden', borderBottomRightRadius: 50 },
@@ -575,15 +595,4 @@ const styles = StyleSheet.create({
   modalHeaderDecor: { width: '150%', height: 100, position: 'absolute', top: -30, borderBottomLeftRadius: 100, borderBottomRightRadius: 100, justifyContent: 'center', alignItems: 'center', paddingTop: 20},
   modalTitle: { fontSize: 24, fontWeight: 'bold', marginBottom: 5, color: '#2C3E50' },
   modalText: { marginBottom: 10, fontSize: 16, color: '#333' },
-  // Login Styles
-  loginCard: { width: width * 0.85, padding: 30, borderRadius: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.1, shadowRadius: 15, elevation: 10, alignItems: 'center'},
-  loginLogo: { width: 80, height: 80, marginBottom: 15 },
-  loginTitle: { fontSize: 26, fontWeight: 'bold', marginBottom: 5 },
-  loginSub: { fontSize: 14, color: '#7F8C8D', marginBottom: 30 },
-  inputGroup: { width: '100%', marginBottom: 15 },
-  inputLabel: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
-  // GridView Styles
-  gridItem: { width: (width - 55) / 2, padding: 20, borderRadius: 20, alignItems: 'center', justifyContent: 'center', shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 2},
-  gridIcon: { width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginBottom: 15 },
-  gridTitle: { fontSize: 14, fontWeight: '600' }
 });
