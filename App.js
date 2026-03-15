@@ -71,71 +71,97 @@ const AppProvider = ({ children }) => {
   );
 };
 
-// --- MÀN HÌNH ĐĂNG NHẬP (LAB 4 - YÊU CẦU 5) ---
+// --- MÀN HÌNH ĐĂNG NHẬP (LAB 4 - CẢI THIỆN SPINNER & AUTOCOMPLETE) ---
 const LoginScreen = () => {
    const { loginApp, isDarkMode } = useContext(AppContext);
    const [mssv, setMssv] = useState('');
    const [password, setPassword] = useState('');
    const [showPassword, setShowPassword] = useState(false);
    const [loading, setLoading] = useState(false);
-
-   // Dùng Picker Spinner làm AutoComplete gợi ý MSSV (Lab 4 - Yêu cầu 2)
+   
+   // Dữ liệu gợi ý thông minh (Lab 4 - Yêu cầu 2: AutoComplete)
    const accounts = [
-       { label: "Nhập hoặc Chọn MSSV", value: "" },
-       { label: "123000991 - Nguyễn Trung Cường", value: "123000991" },
-       { label: "123000111 - Nguyễn Hậu", value: "123000111" },
-       { label: "123000194 - Phú Trần", value: "123000194" }
+       { label: "123000991 - Nguyễn Trung Cường", value: "123000991" },
+       { label: "123000111 - Nguyễn Hậu", value: "123000111" },
+       { label: "123000194 - Phú Trần", value: "123000194" }
    ];
+
+   const [filteredAccounts, setFilteredAccounts] = useState([]);
+   const [showSuggestions, setShowSuggestions] = useState(false);
+
+   const handleMssvChange = (text) => {
+       setMssv(text);
+       if (text.length > 0) {
+           const filtered = accounts.filter(acc => 
+               acc.value.includes(text) || acc.label.toLowerCase().includes(text.toLowerCase())
+           );
+           setFilteredAccounts(filtered);
+           setShowSuggestions(filtered.length > 0);
+       } else {
+           setShowSuggestions(false);
+       }
+   };
+
+   const selectAccount = (value) => {
+       setMssv(value);
+       setShowSuggestions(false);
+   };
 
    const handleLogin = () => {
        if(!mssv || !password) {
            Alert.alert("Lỗi", "Vui lòng nhập đầy đủ thông tin!");
            return;
        }
-       setLoading(true);
+       setLoading(true); // Kích hoạt Spinner
        setTimeout(() => {
            setLoading(false);
-           // Hardcode login cho Demo
            if(password === "123456") {
                loginApp();
            } else {
                Alert.alert("Lỗi", "Mật khẩu sai! Gợi ý: 123456");
            }
-       }, 2000); // Spinner quay 2 giây
+       }, 2000); 
    };
 
    return (
-       // Bọc KeyboardAvoidingView (Lab 4 - Yêu cầu 5)
        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{flex: 1, backgroundColor: isDarkMode ? '#1e272e' : '#F5F7FA', justifyContent: 'center', alignItems: 'center'}}>
            <View style={[styles.loginCard, {backgroundColor: isDarkMode ? '#2d3436' : '#FFF'}]}>
                <Image source={{uri: 'https://cdn-icons-png.flaticon.com/512/2950/2950942.png'}} style={styles.loginLogo} />
                <Text style={[styles.loginTitle, {color: isDarkMode ? '#FFF' : '#2C3E50'}]}>Quản Lý Sinh Viên</Text>
                <Text style={styles.loginSub}>Đăng nhập để tiếp tục</Text>
                
-               {/* 1. Spinner/AutoComplete Picker */}
-               <View style={styles.inputGroup}>
-                   <Text style={[styles.inputLabel, {color: isDarkMode ? '#b2bec3' : '#7F8C8D'}]}>Tài khoản (Trích xuất từ Spinner)</Text>
+               {/* 1. AutoComplete Smart Input (Thay thế Spinner Picker cũ) */}
+               <View style={[styles.inputGroup, { zIndex: 100 }]}>
+                   <Text style={[styles.inputLabel, {color: isDarkMode ? '#b2bec3' : '#7F8C8D'}]}>Tài khoản (Nhập MSSV)</Text>
                    <View style={[styles.inputWrapper, {backgroundColor: isDarkMode ? '#3d4447' : '#F5F7FA', borderColor: isDarkMode ? '#3d4447' : '#E1E1E1'}]}>
                        <Ionicons name="person" size={20} color="#666" style={{marginRight: 10}} />
-                       <Picker 
-                            selectedValue={mssv} 
-                            onValueChange={(itemValue) => setMssv(itemValue)} 
-                            style={[{flex: 1, color: isDarkMode ? '#FFF' : '#333', backgroundColor: 'transparent', height: 50, borderWidth: 0}, Platform.OS === 'web' && {outline: 'none'}]}
-                            dropdownIconColor={isDarkMode ? '#FFF' : '#333'}
-                       >
-                           {accounts.map((acc, index) => (
-                               <Picker.Item 
-                                    key={index} 
-                                    label={acc.label} 
-                                    value={acc.value} 
-                                    color={isDarkMode ? '#000' : '#333'} // Cố định màu chữ Dropdown khi xổ ra
-                               />
-                           ))}
-                       </Picker>
+                       <TextInput 
+                            style={[styles.inputModern, {color: isDarkMode ? '#FFF' : '#333'}]}
+                            placeholder="Nhập MSSV"
+                            placeholderTextColor="#999"
+                            value={mssv}
+                            onChangeText={handleMssvChange}
+                            onFocus={() => mssv.length > 0 && setShowSuggestions(true)}
+                       />
                    </View>
+                   
+                   {/* Gợi ý Dropdown */}
+                   {showSuggestions && (
+                       <View style={[styles.suggestionContainer, {backgroundColor: isDarkMode ? '#3d4447' : '#FFF', borderColor: isDarkMode ? '#555' : '#E1E1E1'}]}>
+                           {filteredAccounts.map((item, index) => (
+                               <TouchableOpacity 
+                                    key={index} 
+                                    style={styles.suggestionItem}
+                                    onPress={() => selectAccount(item.value)}
+                               >
+                                   <Text style={{color: isDarkMode ? '#FFF' : '#333'}}>{item.label}</Text>
+                               </TouchableOpacity>
+                           ))}
+                       </View>
+                   )}
                </View>
 
-               {/* 2. Password có ẩn hiện Mật khẩu */}
+               {/* 2. Password */}
                <View style={styles.inputGroup}>
                    <Text style={[styles.inputLabel, {color: isDarkMode ? '#b2bec3' : '#7F8C8D'}]}>Mật khẩu</Text>
                    <View style={[styles.inputWrapper, {backgroundColor: isDarkMode ? '#3d4447' : '#F5F7FA', borderColor: isDarkMode ? '#3d4447' : '#E1E1E1'}]}>
@@ -154,7 +180,7 @@ const LoginScreen = () => {
                    </View>
                </View>
 
-               {/* 3. Spinner Loading Button */}
+               {/* 3. Spinner Loading Button (Cải thiện hiệu ứng chờ) */}
                <TouchableOpacity 
                    style={[styles.customBtn, { marginTop: 20, backgroundColor: loading ? '#bdc3c7' : '#4A90E2' }]} 
                    onPress={handleLogin}
@@ -179,7 +205,7 @@ const Excercise1 = () => {
   const [editName, setEditName] = useState(profileData.name);
   const [editId, setEditId] = useState(profileData.id);
 
-  // Data cho lưới GridView
+  // Data cho lưới GridView & AutoComplete Khoa
   const gridData = [
      { id: '1', title: 'Công Nghệ Thông Tin', icon: 'laptop', color: '#4A90E2' },
      { id: '2', title: 'Khoa Cơ Điện', icon: 'cog', color: '#E67E22' },
@@ -188,6 +214,22 @@ const Excercise1 = () => {
      { id: '5', title: 'Quản Trị Kinh Doanh', icon: 'chart-pie', color: '#F1C40F' },
      { id: '6', title: 'Luật Kinh Tế', icon: 'scale-balance', color: '#E74C3C' }
   ];
+
+  const [editMajor, setEditMajor] = useState(profileData.major);
+  const [filteredMajors, setFilteredMajors] = useState([]);
+  const [showMajorSuggestions, setShowMajorSuggestions] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleMajorChange = (text) => {
+      setEditMajor(text);
+      if (text.length > 0) {
+          const filtered = gridData.filter(item => item.title.toLowerCase().includes(text.toLowerCase()));
+          setFilteredMajors(filtered);
+          setShowMajorSuggestions(filtered.length > 0);
+      } else {
+          setShowMajorSuggestions(false);
+      }
+  };
 
   const bgColor = isDarkMode ? '#1e272e' : '#F5F7FA';
   const cardColor = isDarkMode ? '#2d3436' : '#FFF';
@@ -203,9 +245,13 @@ const Excercise1 = () => {
   };
 
   const saveProfile = () => {
-    if(!editName.trim() || !editId.trim()){ Alert.alert("Lỗi", "Vui lòng không bỏ trống thông tin!"); return; }
-    updateProfileData({ ...profileData, name: editName, id: editId });
-    setEditModalVisible(false);
+    if(!editName.trim() || !editId.trim() || !editMajor.trim()){ Alert.alert("Lỗi", "Vui lòng không bỏ trống thông tin!"); return; }
+    setIsSaving(true);
+    setTimeout(() => {
+        updateProfileData({ ...profileData, name: editName, id: editId, major: editMajor });
+        setIsSaving(false);
+        setEditModalVisible(false);
+    }, 1500); // Giả lập Spinner lưu 1.5s
   };
 
   return (
@@ -285,14 +331,37 @@ const Excercise1 = () => {
           <View style={[styles.modalView, {backgroundColor: cardColor}]}>
             <Text style={[styles.modalTitle, {color: textColor, marginTop: 10}]}>Chỉnh Sửa Hồ Sơ</Text>
             <View style={{width: '100%', marginTop: 20}}>
-                <Text style={[styles.label, {color: subTextColor}]}>Họ và Tên</Text>
-                <TextInput style={[styles.inputModern, {backgroundColor: isDarkMode?'#1e272e':'#F5F7FA', color: textColor, marginBottom: 15, paddingHorizontal: 15}]} value={editName} onChangeText={setEditName}/>
-                <Text style={[styles.label, {color: subTextColor}]}>Mã Số Sinh Viên</Text>
-                <TextInput style={[styles.inputModern, {backgroundColor: isDarkMode?'#1e272e':'#F5F7FA', color: textColor, paddingHorizontal: 15}]} value={editId} onChangeText={setEditId} keyboardType="numeric"/>
+                <Text style={[styles.label, {color: isDarkMode ? '#b2bec3' : '#333', fontWeight: 'bold'}]}>Họ và Tên</Text>
+                <TextInput style={[styles.inputModern, {backgroundColor: isDarkMode?'#3d4447':'#F0F2F5', color: isDarkMode ? '#FFF' : '#000', marginBottom: 15, paddingHorizontal: 15, borderRadius: 10}]} value={editName} onChangeText={setEditName}/>
+                <Text style={[styles.label, {color: isDarkMode ? '#b2bec3' : '#333', fontWeight: 'bold'}]}>Mã Số Sinh Viên</Text>
+                <TextInput style={[styles.inputModern, {backgroundColor: isDarkMode?'#3d4447':'#F0F2F5', color: isDarkMode ? '#FFF' : '#000', marginBottom: 15, paddingHorizontal: 15, borderRadius: 10}]} value={editId} onChangeText={setEditId} keyboardType="numeric"/>
+                
+                {/* AutoComplete cho Khoa */}
+                <Text style={[styles.label, {color: subTextColor}]}>Khoa / Ngành (Gợi ý)</Text>
+                <View style={{zIndex: 1000}}>
+                    <TextInput 
+                        style={[styles.inputModern, {backgroundColor: isDarkMode?'#3d4447':'#F0F2F5', color: isDarkMode ? '#FFF' : '#000', paddingHorizontal: 15, borderRadius: 10}]} 
+                        value={editMajor} 
+                        onChangeText={handleMajorChange}
+                        placeholder="VD: Công Nghệ Thông Tin"
+                        placeholderTextColor="#999"
+                    />
+                    {showMajorSuggestions && (
+                        <View style={[styles.suggestionContainer, {top: 55, backgroundColor: isDarkMode ? '#3d4447' : '#FFF'}]}>
+                            {filteredMajors.map((m, idx) => (
+                                <TouchableOpacity key={idx} style={styles.suggestionItem} onPress={() => { setEditMajor(m.title); setShowMajorSuggestions(false); }}>
+                                    <Text style={{color: isDarkMode ? '#FFF' : '#333'}}>{m.title}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    )}
+                </View>
             </View>
             <View style={{flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginTop: 30}}>
-                <Pressable style={[styles.customBtn, {backgroundColor: '#95a5a6', width: '45%'}]} onPress={() => setEditModalVisible(false)}><Text style={styles.customBtnText}>Hủy</Text></Pressable>
-                <Pressable style={[styles.customBtn, {backgroundColor: '#2ECC71', width: '45%'}]} onPress={saveProfile}><Text style={styles.customBtnText}>Lưu</Text></Pressable>
+                <Pressable style={[styles.customBtn, {backgroundColor: '#95a5a6', width: '45%'}]} onPress={() => setEditModalVisible(false)} disabled={isSaving}><Text style={styles.customBtnText}>Hủy</Text></Pressable>
+                <Pressable style={[styles.customBtn, {backgroundColor: isSaving ? '#bdc3c7' : '#2ECC71', width: '45%'}]} onPress={saveProfile} disabled={isSaving}>
+                    {isSaving ? <ActivityIndicator size="small" color="#FFF" /> : <Text style={styles.customBtnText}>Lưu</Text>}
+                </Pressable>
             </View>
           </View>
          </KeyboardAvoidingView>
@@ -413,14 +482,33 @@ const Excercise3 = () => {
   const { isDarkMode, toggleDarkMode, studentsData, setStudentsData, logoutApp } = useContext(AppContext);
   const [searchText, setSearchText] = useState('');
   const [isAgree, setIsAgree] = useState(false);
+  const [studentSuggestions, setStudentSuggestions] = useState([]);
+  const [showStudentSuggestions, setShowStudentSuggestions] = useState(false);
+  const [isFiltering, setIsFiltering] = useState(false);
+
+  const handleSearchChange = (text) => {
+      setSearchText(text);
+      if (text.length > 0) {
+          const allStudents = [...top100StudentsByAvgPoint, ...top10StudentsByAvgTrainingPoint];
+          const filtered = allStudents.filter(s => s.name.toLowerCase().includes(text.toLowerCase())).slice(0, 5);
+          setStudentSuggestions(filtered);
+          setShowStudentSuggestions(filtered.length > 0);
+      } else {
+          setShowStudentSuggestions(false);
+      }
+  };
 
   const filterStudents = () => {
      if(!searchText.trim()) { Alert.alert("Thiếu thông tin", "Vui lòng nhập tên sinh viên cần tìm."); return; }
-     const lowerSearch = searchText.toLowerCase();
-     const filteredPoints = top100StudentsByAvgPoint.filter(s => s.name.toLowerCase().includes(lowerSearch));
-     const filteredTraining = top10StudentsByAvgTrainingPoint.filter(s => s.name.toLowerCase().includes(lowerSearch));
-     setStudentsData({ point: filteredPoints, training: filteredTraining });
-     Alert.alert("Thành công", `Đã lọc danh sách theo từ khóa: "${searchText}"\nHãy sang Tab "Xếp Hạng" để xem kết quả!`);
+     setIsFiltering(true);
+     setTimeout(() => {
+         const lowerSearch = searchText.toLowerCase();
+         const filteredPoints = top100StudentsByAvgPoint.filter(s => s.name.toLowerCase().includes(lowerSearch));
+         const filteredTraining = top10StudentsByAvgTrainingPoint.filter(s => s.name.toLowerCase().includes(lowerSearch));
+         setStudentsData({ point: filteredPoints, training: filteredTraining });
+         setIsFiltering(false);
+         Alert.alert("Thành công", `Đã lọc danh sách theo từ khóa: "${searchText}"\nHãy sang Tab "Xếp Hạng" để xem kết quả!`);
+     }, 1500); // Spinner lọc 1.5s
   };
 
   const bgColor = isDarkMode ? '#1e272e' : '#F5F7FA';
@@ -455,9 +543,26 @@ const Excercise3 = () => {
           </View>
           <View style={[styles.dividerSimple, {backgroundColor: dividerColor}]} />
           <Text style={[styles.label, {color: subTextColor}]}>2. Lọc Danh Sách Sinh Viên</Text>
-          <View style={[styles.inputWrapper, {backgroundColor: sectionBgColor, borderColor: sectionBgColor}]}>
-            <Ionicons name="search" size={20} color={subTextColor} style={{marginRight: 10}} />
-            <TextInput style={[styles.inputModern, {color: textColor}]} placeholder="Nhập tên sinh viên VD: Cường" placeholderTextColor={subTextColor} value={searchText} onChangeText={setSearchText} />
+          <View style={{zIndex: 1000}}>
+              <View style={[styles.inputWrapper, {backgroundColor: sectionBgColor, borderColor: sectionBgColor}]}>
+                <Ionicons name="search" size={20} color={subTextColor} style={{marginRight: 10}} />
+                <TextInput 
+                    style={[styles.inputModern, {color: textColor}]} 
+                    placeholder="Nhập tên sinh viên VD: Cường" 
+                    placeholderTextColor={subTextColor} 
+                    value={searchText} 
+                    onChangeText={handleSearchChange} 
+                />
+              </View>
+              {showStudentSuggestions && (
+                  <View style={[styles.suggestionContainer, {top: 55, backgroundColor: isDarkMode ? '#3d4447' : '#FFF'}]}>
+                      {studentSuggestions.map((s, idx) => (
+                          <TouchableOpacity key={idx} style={styles.suggestionItem} onPress={() => { setSearchText(s.name); setShowStudentSuggestions(false); }}>
+                              <Text style={{color: isDarkMode ? '#FFF' : '#333'}}>{s.name}</Text>
+                          </TouchableOpacity>
+                      ))}
+                  </View>
+              )}
           </View>
           <View style={{marginTop: 5, marginBottom: 15}}>
             <TouchableOpacity style={styles.checkRow} onPress={() => setIsAgree(!isAgree)}>
@@ -465,9 +570,13 @@ const Excercise3 = () => {
               <Text style={[styles.checkText, {color: textColor}]}>Cho phép thay đổi trạng thái danh sách</Text>
             </TouchableOpacity>
           </View>
-          <Pressable style={({ pressed }) => [ styles.actionButton, { backgroundColor: !isAgree ? '#BDC3C7' : (pressed ? '#27ae60' : '#2ECC71') } ]} disabled={!isAgree} onPress={filterStudents}>
-            <Ionicons name="filter" size={20} color="#FFF" />
-            <Text style={styles.actionButtonText}>Thực Hiện Lọc Bộ Nhớ</Text>
+          <Pressable style={({ pressed }) => [ styles.actionButton, { backgroundColor: !isAgree || isFiltering ? '#BDC3C7' : (pressed ? '#27ae60' : '#2ECC71') } ]} disabled={!isAgree || isFiltering} onPress={filterStudents}>
+            {isFiltering ? <ActivityIndicator size="small" color="#FFF" /> : (
+                <>
+                    <Ionicons name="filter" size={20} color="#FFF" />
+                    <Text style={styles.actionButtonText}>Thực Hiện Lọc Bộ Nhớ</Text>
+                </>
+            )}
           </Pressable>
 
           <View style={[styles.dividerSimple, {backgroundColor: dividerColor}]} />
@@ -582,6 +691,9 @@ const styles = StyleSheet.create({
   loginSub: { fontSize: 14, color: '#7F8C8D', marginBottom: 30 },
   inputGroup: { width: '100%', marginBottom: 15 },
   inputLabel: { fontSize: 13, fontWeight: '600', marginBottom: 8 },
+  // AutoComplete Suggestions
+  suggestionContainer: { position: 'absolute', top: 75, left: 0, right: 0, backgroundColor: '#FFF', borderRadius: 12, borderWidth: 1, borderColor: '#E1E1E1', shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5, zIndex: 1000 },
+  suggestionItem: { padding: 15, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
   // GridView Styles
   gridItem: { width: (width - 55) / 2, padding: 20, borderRadius: 20, alignItems: 'center', justifyContent: 'center', shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 2},
   gridIcon: { width: 60, height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', marginBottom: 15 },
