@@ -8,15 +8,15 @@ const PremiumInput = ({ label, icon, value, onChangeText, placeholder, secureTex
 
   return (
     <View style={[styles.container, containerStyle]}>
-      {label && <Text style={[styles.label, { color: theme.subText }]}>{label}</Text>}
-      <View style={[styles.inputWrapper, { backgroundColor: theme.input, borderColor: theme.border }]}>
-        {icon && <Ionicons name={icon} size={20} color={theme.subText} style={styles.icon} />}
+      {label && <Text style={[styles.label, { color: isDarkMode ? theme.subText : '#1E293B', fontWeight: '800' }]}>{label}</Text>}
+      <View style={[styles.inputWrapper, { backgroundColor: theme.input, borderColor: isDarkMode ? theme.border : '#CBD5E1', borderWidth: isDarkMode ? 1 : 1.5 }]}>
+        {icon && <Ionicons name={icon} size={20} color={isDarkMode ? theme.subText : '#475569'} style={styles.icon} />}
         <TextInput
-          style={[styles.input, { color: theme.text }]}
+          style={[styles.input, { color: theme.text, fontWeight: '600' }]}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={theme.subText}
+          placeholderTextColor={isDarkMode ? theme.subText : '#94A3B8'}
           secureTextEntry={secureTextEntry}
         />
       </View>

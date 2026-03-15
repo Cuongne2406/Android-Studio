@@ -2,26 +2,57 @@ import React, { useState, useContext } from 'react';
 import { 
   View, Text, SectionList, RefreshControl, 
   Modal, Pressable, StyleSheet, StatusBar, Dimensions,
-  ActivityIndicator, Alert, TouchableOpacity
+  ActivityIndicator, Alert, TouchableOpacity, Image
 } from 'react-native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { 
+  FadeInDown, 
+  FadeInRight, 
+  Layout, 
+  ZoomIn 
+} from 'react-native-reanimated';
 import { AppContext } from '../context/AppContext';
 import { Colors } from '../theme/Theme';
-import GlassCard from '../components/GlassCard';
-import PremiumButton from '../components/PremiumButton';
+import ScreenHeader from '../components/ScreenHeader';
 import PremiumInput from '../components/PremiumInput';
 import { top100StudentsByAvgPoint, top10StudentsByAvgTrainingPoint } from '../../studentStatistics';
 
 const { width } = Dimensions.get('window');
 
-const RankingScreen = () => {
-  const { studentsData, setStudentsData, isDarkMode } = useContext(AppContext);
-  const [selectedStudent, setSelectedStudent] = useState(null); 
+const RankingScreen = ({ navigation }) => {
+  const { 
+    studentsData, setStudentsData, isDarkMode, 
+    facultyFilter, setFacultyFilter, triggerHaptic 
+  } = useContext(AppContext);
   const [refreshing, setRefreshing] = useState(false); 
   const [searchText, setSearchText] = useState('');
   const [isFiltering, setIsFiltering] = useState(false);
 
+  // Cross-screen integration effect
+  React.useEffect(() => {
+    if (facultyFilter) {
+      setSearchText(facultyFilter);
+      // Trigger filtering logic automatically
+      const lowerSearch = facultyFilter.toLowerCase();
+      const filteredPoints = top100StudentsByAvgPoint.filter(s => s.name.toLowerCase().includes(lowerSearch));
+      const filteredTraining = top10StudentsByAvgTrainingPoint.filter(s => s.name.toLowerCase().includes(lowerSearch));
+      setStudentsData({ point: filteredPoints, training: filteredTraining });
+      
+      // Clear filter after applying
+      setFacultyFilter(null);
+    }
+  }, [facultyFilter]);
+
+  const handleStudentPress = (student, index, type) => {
+    navigation.navigate('RankingDetail', { 
+        student: { ...student, rank: index + 1, type },
+        isDarkMode 
+    });
+  };
+
   const filterStudents = () => {
+    triggerHaptic('selection');
     if(!searchText.trim()) {
         setStudentsData({ point: top100StudentsByAvgPoint, training: top10StudentsByAvgTrainingPoint });
         return;
@@ -33,7 +64,48 @@ const RankingScreen = () => {
         const filteredTraining = top10StudentsByAvgTrainingPoint.filter(s => s.name.toLowerCase().includes(lowerSearch));
         setStudentsData({ point: filteredPoints, training: filteredTraining });
         setIsFiltering(false);
+        triggerHaptic('success');
     }, 800);
+  };
+
+  const theme = isDarkMode ? Colors.dark : Colors.light;
+
+  const renderPodium = (data, type) => {
+    if (!data || data.length < 3) return null;
+    const top3 = data.slice(0, 3);
+    // [2nd, 1st, 3rd] layout for podium
+    const ordered = [top3[1], top3[0], top3[2]];
+
+    return (
+      <View style={styles.podiumContainer}>
+        {ordered.map((student, idx) => {
+          const isWinner = idx === 1;
+          const rank = idx === 0 ? 2 : idx === 1 ? 1 : 3;
+          const colors = rank === 1 ? ['#FFD700', '#FFA500'] : rank === 2 ? ['#C0C0C0', '#808080'] : ['#CD7F32', '#8B4513'];
+          
+          return (
+            <Animated.View 
+              key={student.id || student.mssv} 
+              entering={ZoomIn.delay(idx * 200)}
+              style={[styles.podiumItem, isWinner && styles.winnerItem]}
+            >
+              <TouchableOpacity onPress={() => handleStudentPress(student, rank - 1, type)}>
+                <View style={styles.avatarContainer}>
+                  <LinearGradient colors={colors} style={styles.crown}>
+                    <MaterialCommunityIcons name={rank === 1 ? "crown" : "medal"} size={16} color="#FFF" />
+                  </LinearGradient>
+                  <Image source={{ uri: `https://ui-avatars.com/api/?name=${student.name}&background=random` }} style={[styles.podiumAvatar, isWinner && styles.winnerAvatar, { borderColor: colors[0] }]} />
+                </View>
+                <Text style={[styles.podiumName, { color: theme.text, fontWeight: '800' }]} numberOfLines={1}>{student.name.split(' ').pop()}</Text>
+                <Text style={[styles.podiumScore, { color: rank === 1 ? (isDarkMode ? '#FFD700' : '#D4AF37') : (isDarkMode ? '#AAA' : '#444') }]}>
+                  {student.avgPoint || student.avgTrainingPoint}
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
+          );
+        })}
+      </View>
+    );
   };
 
   const rankingData = [
@@ -49,22 +121,22 @@ const RankingScreen = () => {
      }, 1500);
   };
 
-  const theme = isDarkMode ? Colors.dark : Colors.light;
-
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, {backgroundColor: theme.card}]}>
-        <View style={{flex: 1}}>
-            <Text style={[styles.headerTitle, {color: theme.text}]}>Xếp Hạng</Text>
-            <Text style={[styles.headerSubtitle, {color: theme.subText}]}>Học Kỳ 1 - 2024</Text>
-        </View>
-        <TouchableOpacity 
-            style={[styles.filterToggle, {backgroundColor: Colors.primary + '15'}]}
-            onPress={() => setSearchText('')}
-        >
-            <Ionicons name="refresh-outline" size={20} color={Colors.primary} />
-        </TouchableOpacity>
-      </View>
+      <ScreenHeader 
+        title="Xếp Hạng" 
+        subtitle="Học Kỳ 1 - 2024" 
+        theme={theme} 
+        isDarkMode={isDarkMode}
+        rightElement={
+            <TouchableOpacity 
+                style={[styles.filterToggle, {backgroundColor: Colors.primary + '15'}]}
+                onPress={() => { triggerHaptic(); setSearchText(''); setStudentsData({ point: top100StudentsByAvgPoint, training: top10StudentsByAvgTrainingPoint }); }}
+            >
+                <Ionicons name="refresh-outline" size={20} color={Colors.primary} />
+            </TouchableOpacity>
+        }
+      />
 
       <View style={styles.filterContainer}>
           <PremiumInput 
@@ -90,109 +162,109 @@ const RankingScreen = () => {
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
         refreshControl={ <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} /> }
-        renderSectionHeader={({ section: { title, icon, iconColor } }) => (
-          <View style={styles.sectionHeader}>
-            <View style={[styles.sectionIcon, {backgroundColor: iconColor}]}>
-                <MaterialCommunityIcons name={icon} size={18} color="#FFF" />
-            </View>
-            <Text style={[styles.sectionTitle, {color: theme.text}]}>{title}</Text>
+        renderSectionHeader={({ section }) => (
+          <View>
+            <Animated.View entering={FadeInRight} style={styles.sectionHeader}>
+              <View style={[styles.sectionIcon, {backgroundColor: section.iconColor}]}>
+                  <MaterialCommunityIcons name={section.icon} size={18} color="#FFF" />
+              </View>
+              <Text style={[styles.sectionTitle, {color: theme.text}]}>{section.title}</Text>
+            </Animated.View>
+            {!searchText && (
+                <View style={[styles.podiumWrapper, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderColor: theme.border }]}>
+                    {renderPodium(section.data, section.type)}
+                </View>
+            )}
           </View>
         )}
-        renderItem={({ item, index, section }) => ( 
-          <StudentItem isDark={isDarkMode} index={index} student={item} type={section.type} onPress={setSelectedStudent} theme={theme} /> 
-        )}
+        renderItem={({ item, index, section }) => {
+          // Hide top 3 from regular list if podium is shown
+          if (!searchText && index < 3) return null;
+          return (
+            <StudentItem 
+              isDark={isDarkMode} 
+              index={index} 
+              student={item} 
+              type={section.type} 
+              onPress={() => handleStudentPress(item, index, section.type)} 
+              theme={theme} 
+            /> 
+          );
+        }}
         ListFooterComponent={<View style={{ height: 40 }} />}
       />
-
-      <Modal visible={selectedStudent !== null} animationType="fade" transparent={true}>
-          <View style={styles.modalOverlay}>
-              <GlassCard isDarkMode={isDarkMode} style={styles.modalCard}>
-                 {selectedStudent && (
-                     <>
-                        <View style={[styles.modalHeader, {backgroundColor: selectedStudent.type === 'point' ? Colors.primary : Colors.secondary}]}>
-                            <MaterialCommunityIcons name="trophy-variant" size={40} color="#FFF" />
-                        </View>
-                        <Text style={[styles.modalName, {color: theme.text}]}>{selectedStudent.name}</Text>
-                        <Text style={styles.modalId}>MSSV: {selectedStudent.mssv || selectedStudent.id}</Text>
-                        <View style={[styles.modalDivider, {backgroundColor: theme.border}]} />
-                        <View style={styles.statsRow}>
-                            <View style={styles.statItem}>
-                                <Text style={styles.statLabel}>Hạng</Text>
-                                <Text style={[styles.statVal, {color: Colors.warning}]}>#{rankingData.find(s => s.type === selectedStudent.type).data.indexOf(selectedStudent) + 1}</Text>
-                            </View>
-                            <View style={styles.statItem}>
-                                <Text style={styles.statLabel}>{selectedStudent.type === 'point' ? 'Điểm TB' : 'ĐRL'}</Text>
-                                <Text style={[styles.statVal, {color: Colors.success}]}>{selectedStudent.avgPoint || selectedStudent.avgTrainingPoint}</Text>
-                            </View>
-                        </View>
-                        <PremiumButton title="Đóng" onPress={() => setSelectedStudent(null)} style={{width: '100%', marginTop: 20}} />
-                     </>
-                 )}
-              </GlassCard>
-          </View>
-      </Modal>
     </View>
   );
 }
 
 const StudentItem = ({ index, student, type, onPress, theme, isDark }) => {
-  const getRankStyle = (idx) => {
-    if (idx === 0) return { bg: '#FFD700', size: 34, font: 16 };
-    if (idx === 1) return { bg: '#C0C0C0', size: 30, font: 14 };
-    if (idx === 2) return { bg: '#CD7F32', size: 30, font: 14 };
-    return { bg: isDark ? '#4A4A4A' : '#EEE', size: 28, font: 12 };
-  };
-  const rs = getRankStyle(index);
-
   return (
-    <Pressable style={({ pressed }) => [ styles.card, { backgroundColor: theme.card, transform: [{scale: pressed ? 0.98 : 1}] }]} onPress={() => onPress(student)}>
-      <View style={[styles.rankBox, { width: rs.size, height: rs.size, borderRadius: rs.size/2, backgroundColor: rs.bg }]}>
-        <Text style={[styles.rankText, { fontSize: rs.font, color: index < 3 ? '#FFF' : theme.subText }]}>{index + 1}</Text>
-      </View>
-      <View style={styles.info}>
-        <Text style={[styles.name, {color: theme.text}]}>{student.name}</Text>
-        <Text style={styles.id}>ID: {student.mssv || student.id}</Text>
-      </View>
-      <View style={styles.scoreContainer}>
-         <Text style={[styles.score, {color: type === 'point' ? Colors.primary : Colors.secondary}]}>{student.avgPoint || student.avgTrainingPoint}</Text>
-         <Text style={styles.scoreType}>{type === 'point' ? 'GPA' : 'ĐRL'}</Text>
-      </View>
-    </Pressable>
+    <Animated.View 
+      entering={FadeInDown.delay(index * 50).springify()}
+      layout={Layout.springify()}
+    >
+      <Pressable 
+        style={({ pressed }) => [ 
+            styles.card, 
+            { 
+                backgroundColor: theme.card, 
+                transform: [{scale: pressed ? 0.98 : 1}],
+                elevation: isDark ? 2 : 5,
+                shadowOpacity: isDark ? 0.2 : 0.15,
+                borderWidth: isDark ? 0 : 1,
+                borderColor: 'rgba(0,0,0,0.03)' // Subtle hair-line border for clarity
+            }
+        ]} 
+        onPress={() => onPress(student)}
+      >
+        <View style={[styles.rankBox, { backgroundColor: isDark ? '#4A4A4A' : '#F1F5F9' }]}>
+          <Text style={[styles.rankText, { color: isDark ? '#FFF' : '#475569', fontWeight: 'bold' }]}>{index + 1}</Text>
+        </View>
+        <View style={styles.info}>
+          <Text style={[styles.name, {color: theme.text}]}>{student.name}</Text>
+          <Text style={[styles.id, { color: isDark ? theme.subText : '#64748B' }]}>ID: {student.mssv || student.id}</Text>
+        </View>
+        <View style={[styles.scoreBadge, { backgroundColor: type === 'point' ? Colors.primary + (isDark ? '30' : '15') : Colors.secondary + (isDark ? '30' : '15') }]}>
+           <Text style={[styles.score, {color: type === 'point' ? Colors.primary : Colors.secondary}]}>{student.avgPoint || student.avgTrainingPoint}</Text>
+           <Text style={[styles.scoreType, { color: type === 'point' ? Colors.primary : Colors.secondary }]}>{type === 'point' ? 'GPA' : 'ĐRL'}</Text>
+        </View>
+      </Pressable>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    header: { padding: 25, paddingTop: 60, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomLeftRadius: 30, borderBottomRightRadius: 30, elevation: 4 },
-    headerTitle: { fontSize: 26, fontWeight: '900', letterSpacing: 0.5 },
-    headerSubtitle: { fontSize: 13, marginTop: 2, fontWeight: '500' },
-    filterToggle: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-    filterContainer: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginTop: 15, gap: 10 },
-    searchBtn: { width: 50, height: 50, borderRadius: 14, justifyContent: 'center', alignItems: 'center', elevation: 2 },
-    badge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
-    listContainer: { paddingHorizontal: 20, paddingTop: 0 },
-    sectionHeader: { flexDirection: 'row', alignItems: 'center', marginTop: 20, marginBottom: 15, marginLeft: 5 },
     sectionIcon: { width: 32, height: 32, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-    sectionTitle: { fontSize: 17, fontWeight: 'bold' },
-    card: { flexDirection: 'row', alignItems: 'center', padding: 15, borderRadius: 20, marginBottom: 12, elevation: 2 },
-    rankBox: { justifyContent: 'center', alignItems: 'center', marginRight: 15 },
-    rankText: { fontWeight: 'bold' },
+    sectionTitle: { fontSize: 17, fontWeight: '800', letterSpacing: -0.5 },
+    podiumWrapper: { paddingVertical: 10, borderRadius: 25, borderWidth: 1, marginBottom: 20 },
+    podiumContainer: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'flex-end', paddingBottom: 20 },
+    podiumItem: { alignItems: 'center', width: '30%' },
+    winnerItem: { marginBottom: 20 },
+    avatarContainer: { position: 'relative' },
+    podiumAvatar: { width: 63, height: 63, borderRadius: 31.5, borderWidth: 3 },
+    winnerAvatar: { width: 88, height: 88, borderRadius: 44 },
+    crown: { position: 'absolute', top: -15, right: -5, width: 28, height: 28, borderRadius: 14, justifyContent: 'center', alignItems: 'center', zIndex: 10, borderWidth: 2, borderColor: '#FFF' },
+    podiumName: { fontSize: 13, fontWeight: '800', marginTop: 10, textAlign: 'center' },
+    podiumScore: { fontSize: 18, fontWeight: '900', marginTop: 2, textAlign: 'center' },
+    card: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        padding: 15, 
+        borderRadius: 22, 
+        marginBottom: 12,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 12,
+    },
+    rankBox: { width: 34, height: 34, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+    rankText: { fontSize: 13 },
     info: { flex: 1 },
-    name: { fontSize: 16, fontWeight: 'bold' },
-    id: { fontSize: 12, color: '#999', marginTop: 2 },
-    scoreContainer: { alignItems: 'flex-end' },
+    name: { fontSize: 16, fontWeight: '700' },
+    id: { fontSize: 12, marginTop: 2 },
+    scoreBadge: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: 12, alignItems: 'center', minWidth: 65 },
     score: { fontSize: 18, fontWeight: '900' },
-    scoreType: { fontSize: 10, color: '#999', fontWeight: 'bold' },
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-    modalCard: { width: '85%', alignItems: 'center', paddingTop: 40 },
-    modalHeader: { width: 70, height: 70, borderRadius: 35, justifyContent: 'center', alignItems: 'center', position: 'absolute', top: -35, elevation: 5 },
-    modalName: { fontSize: 22, fontWeight: 'bold' },
-    modalId: { color: '#999', marginTop: 5 },
-    modalDivider: { height: 1, width: '100%', marginVertical: 25 },
-    statsRow: { flexDirection: 'row', justifyContent: 'space-around', width: '100%' },
-    statItem: { alignItems: 'center' },
-    statLabel: { color: '#999', fontSize: 13, marginBottom: 5 },
-    statVal: { fontSize: 24, fontWeight: '900' },
+    scoreType: { fontSize: 10, fontWeight: '800', marginTop: 1 },
 });
 
 export default RankingScreen;

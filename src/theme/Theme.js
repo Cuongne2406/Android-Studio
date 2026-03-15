@@ -6,13 +6,13 @@ export const Colors = {
   danger: '#E74C3C',
   info: '#3498DB',
   light: {
-    background: '#F5F7FA',
+    background: '#EEF1F4', // Slightly deeper gray to make white cards "pop"
     card: '#FFFFFF',
-    text: '#333333',
-    subText: '#999999',
-    border: '#F0F0F0',
-    input: '#F5F7FA',
-    divider: '#F0F0F0'
+    text: '#0F172A', // Navy-Black for premium high contrast
+    subText: '#475569', // Muted blue-gray for readable metadata
+    border: '#E2E8F0',
+    input: '#F8FAFC',
+    divider: '#F1F5F9'
   },
   dark: {
     background: '#1E272E',

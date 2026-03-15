@@ -1,5 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { top100StudentsByAvgPoint, top10StudentsByAvgTrainingPoint } from '../../studentStatistics';
 
 export const AppContext = createContext();
@@ -19,6 +21,7 @@ export const AppProvider = ({ children }) => {
   });
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [facultyFilter, setFacultyFilter] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -66,13 +69,22 @@ export const AppProvider = ({ children }) => {
     await AsyncStorage.setItem('isLoggedIn', 'false'); 
   };
 
+  const triggerHaptic = (type = 'selection') => {
+    if (Platform.OS === 'web') return;
+    if (type === 'success') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    else if (type === 'error') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    else if (type === 'warning') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+    else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
   if (!isReady) return null;
 
   return (
     <AppContext.Provider value={{
       profileAvatar, updateAvatar, profileData, updateProfileData,
       studentsData, setStudentsData, isDarkMode, toggleDarkMode,
-      isLoggedIn, loginApp, logoutApp
+      isLoggedIn, loginApp, logoutApp,
+      facultyFilter, setFacultyFilter, triggerHaptic
     }}>
       {children}
     </AppContext.Provider>

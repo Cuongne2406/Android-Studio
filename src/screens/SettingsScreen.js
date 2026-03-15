@@ -9,42 +9,46 @@ import { Colors } from '../theme/Theme';
 import GlassCard from '../components/GlassCard';
 import PremiumInput from '../components/PremiumInput';
 import PremiumButton from '../components/PremiumButton';
+import ScreenHeader from '../components/ScreenHeader';
 
 const { width } = Dimensions.get('window');
 
 const SettingsScreen = () => {
-  const { isDarkMode, toggleDarkMode, setStudentsData, logoutApp, profileData } = useContext(AppContext);
+  const { 
+    isDarkMode, toggleDarkMode, logoutApp, triggerHaptic 
+  } = useContext(AppContext);
   const [isFiltering, setIsFiltering] = useState(false);
 
   const theme = isDarkMode ? Colors.dark : Colors.light;
 
   const handleLogout = () => {
+      triggerHaptic('warning');
       Alert.alert(
           "Đăng xuất",
           "Bạn có chắc chắn muốn thoát khỏi hệ thống?",
           [
               { text: "Hủy", style: "cancel" },
-              { text: "Đăng xuất", onPress: logoutApp, style: "destructive" }
+              { text: "Đăng xuất", onPress: () => { triggerHaptic('error'); logoutApp(); }, style: "destructive" }
           ]
       );
   };
 
   return (
     <View style={{flex: 1, backgroundColor: theme.background}}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 50 }}>
-        {/* Header */}
-        <View style={[styles.header, {backgroundColor: theme.card}]}>
-            <Text style={[styles.headerTitle, {color: theme.text}]}>Cấu Hình</Text>
-            <View style={styles.userInfo}>
-                <Ionicons name="settings-outline" size={24} color={Colors.primary} />
-            </View>
-        </View>
+      <ScreenHeader 
+        title="Cấu Hình" 
+        subtitle="Quản lý hệ thống & cá nhân" 
+        theme={theme} 
+        isDarkMode={isDarkMode}
+        rightElement={<Ionicons name="settings-outline" size={24} color={Colors.primary} />}
+      />
+      <ScrollView contentContainerStyle={{ paddingBottom: 50, paddingTop: 10 }}>
 
         <View style={styles.container}>
             {/* Appearance Section */}
             <Text style={[styles.sectionTitle, {color: theme.subText}]}>GIAO DIỆN</Text>
             <GlassCard isDarkMode={isDarkMode} style={styles.settingCard}>
-                <TouchableOpacity style={styles.settingRow} onPress={() => toggleDarkMode(false)}>
+                <TouchableOpacity style={styles.settingRow} onPress={() => { triggerHaptic(); toggleDarkMode(false); }}>
                     <View style={styles.rowLeft}>
                         <View style={[styles.iconBox, {backgroundColor: '#FFBE76'}]}><Ionicons name="sunny" size={20} color="#FFF" /></View>
                         <Text style={[styles.rowText, {color: theme.text}]}>Chế độ sáng</Text>
@@ -52,7 +56,7 @@ const SettingsScreen = () => {
                     <Ionicons name={!isDarkMode ? "radio-button-on" : "radio-button-off"} size={22} color={Colors.primary} />
                 </TouchableOpacity>
                 <View style={[styles.divider, {backgroundColor: theme.border}]} />
-                <TouchableOpacity style={styles.settingRow} onPress={() => toggleDarkMode(true)}>
+                <TouchableOpacity style={styles.settingRow} onPress={() => { triggerHaptic(); toggleDarkMode(true); }}>
                     <View style={styles.rowLeft}>
                         <View style={[styles.iconBox, {backgroundColor: '#30336B'}]}><Ionicons name="moon" size={20} color="#FFF" /></View>
                         <Text style={[styles.rowText, {color: theme.text}]}>Chế độ tối</Text>
