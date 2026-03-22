@@ -43,7 +43,7 @@ const TaskItem = ({ item, onDelete, onEdit, theme, isDarkMode }) => {
                 </View>
 
                 <TouchableOpacity 
-                    onPress={(e) => { e.stopPropagation(); onDelete(item.id); }}
+                    onPress={(e) => { e.stopPropagation(); onDelete(item._id || item.id); }}
                     style={styles.deleteBtn}
                 >
                     <Ionicons name="trash-outline" size={20} color={Colors.error} />

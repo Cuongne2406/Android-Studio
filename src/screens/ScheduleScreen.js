@@ -50,7 +50,7 @@ const ScheduleScreen = () => {
 
     const handleAddTask = (task) => {
         if (editingTask) {
-            updateTask({ ...task, id: editingTask.id });
+            updateTask({ ...task, id: editingTask._id || editingTask.id });
         } else {
             addTask(task);
         }
@@ -125,12 +125,12 @@ const ScheduleScreen = () => {
                 ) : (
                     <FlatList
                         data={filteredTasks}
-                        keyExtractor={item => item.id}
+                        keyExtractor={item => (item._id || item.id).toString()}
                         renderItem={({ item, index }) => (
                             <Animated.View entering={FadeInDown.delay(index * 100).duration(600)}>
                                 <TaskItem 
                                     item={item} 
-                                    onDelete={() => deleteTask(item.id)} 
+                                    onDelete={() => deleteTask(item._id || item.id)} 
                                     onEdit={() => handleEditTask(item)}
                                     theme={theme}
                                     isDarkMode={isDarkMode}

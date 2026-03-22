@@ -17,7 +17,7 @@ import GlassCard from '../components/GlassCard';
 const { width, height } = Dimensions.get('window');
 
 const LoginScreen = () => {
-    const { loginApp, isDarkMode } = useContext(AppContext);
+    const { loginApp, isDarkMode, triggerHaptic } = useContext(AppContext);
     const [mssv, setMssv] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -61,13 +61,14 @@ const LoginScreen = () => {
         }
     };
 
-    const handleLogin = () => {
-        if (!mssv || !password) return;
+    const handleLogin = async () => {
+        if (!mssv || !password) {
+            triggerHaptic('error');
+            return;
+        }
         setLoading(true);
-        setTimeout(() => {
-            loginApp(mssv);
-            setLoading(false);
-        }, 1500);
+        await loginApp(mssv, password);
+        setLoading(false);
     };
 
     const theme = isDarkMode ? Colors.dark : Colors.light;

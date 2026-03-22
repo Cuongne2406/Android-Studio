@@ -11,18 +11,20 @@ import { AppContext } from '../context/AppContext';
 import { Colors } from '../theme/Theme';
 import ScreenHeader from '../components/ScreenHeader';
 import GlassCard from '../components/GlassCard';
-import { top100StudentsByAvgPoint, top10StudentsByAvgTrainingPoint } from '../../studentStatistics';
+// Removed static import for real API integration
 
 const { width } = Dimensions.get('window');
 
 const RankingScreen = ({ navigation }) => {
-  const { isDarkMode, facultyFilter, setFacultyFilter, addSearchHistory, triggerHaptic } = useContext(AppContext);
+  const { isDarkMode, facultyFilter, setFacultyFilter, addSearchHistory, triggerHaptic, studentsData } = useContext(AppContext);
   const [searchQuery, setSearchQuery] = useState('');
   
   const theme = isDarkMode ? Colors.dark : Colors.light;
 
   // Restore faculty filtering logic
   const displayData = useMemo(() => {
+    if (!studentsData || !studentsData.point) return [];
+    
     const filterFn = s => {
         const lowerSearch = searchQuery.toLowerCase();
         const matchesSearch = s.name.toLowerCase().includes(lowerSearch) || 
@@ -31,16 +33,15 @@ const RankingScreen = ({ navigation }) => {
         
         if (!facultyFilter) return matchesSearch;
         
-        // Match faculty (khoa)
         const studentKhoa = s.khoa || (s.type === 'point' ? 'Khoa Công nghệ Thông tin' : 'Khoa Quản trị Kinh doanh');
         return matchesSearch && studentKhoa.toLowerCase().includes(facultyFilter.toLowerCase());
     };
 
     return [
-      { title: 'Bảng Vàng Học Tập', icon: 'school', iconColor: Colors.primary, data: top100StudentsByAvgPoint.filter(filterFn), type: 'point' },
-      { title: 'Ngôi Sao Rèn Luyện', icon: 'star-circle', iconColor: Colors.secondary, data: top10StudentsByAvgTrainingPoint.filter(filterFn), type: 'training' }
+      { title: 'Bảng Vàng Học Tập', icon: 'school', iconColor: Colors.primary, data: studentsData.point.filter(filterFn), type: 'point' },
+      { title: 'Ngôi Sao Rèn Luyện', icon: 'star-circle', iconColor: Colors.secondary, data: studentsData.training.filter(filterFn), type: 'training' }
     ];
-  }, [searchQuery, facultyFilter]);
+  }, [searchQuery, facultyFilter, studentsData]);
 
   const handleStudentPress = (student, index, type) => {
     triggerHaptic('selection');
@@ -124,7 +125,7 @@ const RankingScreen = ({ navigation }) => {
 
       <SectionList
         sections={displayData}
-        keyExtractor={(item, index) => (item.id || item.mssv || index).toString()}
+        keyExtractor={(item, index) => (item._id || item.id || item.mssv || index).toString()}
         contentContainerStyle={{ paddingBottom: 40 }}
         stickySectionHeadersEnabled={false}
         showsVerticalScrollIndicator={false}
@@ -151,7 +152,7 @@ const RankingScreen = ({ navigation }) => {
                         <Image source={{ uri: `https://ui-avatars.com/api/?name=${item.name}&background=random` }} style={styles.itemAvatar} />
                         <View style={styles.itemInfo}>
                             <Text style={[styles.itemName, { color: theme.text }]}>{item.name}</Text>
-                            <Text style={[styles.itemId, { color: theme.subText }]}>{item.mssv || item.id}</Text>
+                            <Text style={[styles.itemId, { color: theme.subText }]}>{item.mssv || item.id || 'N/A'}</Text>
                         </View>
                         <View style={styles.itemScoreBox}>
                             <Text style={[styles.itemScore, { color: section.type === 'point' ? Colors.primary : Colors.secondary }]}>
