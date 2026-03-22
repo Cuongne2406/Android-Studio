@@ -21,7 +21,11 @@ export const AppProvider = ({ children }) => {
   });
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userToken, setUserToken] = useState(null);
   const [facultyFilter, setFacultyFilter] = useState(null);
+  const [tasks, setTasks] = useState([]);
+  const [searchHistory, setSearchHistory] = useState([]);
+  const [favorites, setFavorites] = useState([]);
 
   useEffect(() => {
     const loadData = async () => {
@@ -30,11 +34,19 @@ export const AppProvider = ({ children }) => {
         const savedProfile = await AsyncStorage.getItem('profileData');
         const savedTheme = await AsyncStorage.getItem('isDarkMode');
         const savedLogin = await AsyncStorage.getItem('isLoggedIn');
+        const savedToken = await AsyncStorage.getItem('userToken');
+        const savedTasks = await AsyncStorage.getItem('tasks');
+        const savedHistory = await AsyncStorage.getItem('searchHistory');
+        const savedFavorites = await AsyncStorage.getItem('favorites');
         
         if (savedAvatar) setProfileAvatar(savedAvatar);
         if (savedProfile) setProfileData(JSON.parse(savedProfile));
         if (savedTheme !== null) setIsDarkMode(JSON.parse(savedTheme));
         if (savedLogin !== null) setIsLoggedIn(JSON.parse(savedLogin));
+        if (savedToken) setUserToken(savedToken);
+        if (savedTasks) setTasks(JSON.parse(savedTasks));
+        if (savedHistory) setSearchHistory(JSON.parse(savedHistory));
+        if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
       } catch (error) { 
         console.log("Error loading persistent data:", error); 
       } finally { 
@@ -44,31 +56,6 @@ export const AppProvider = ({ children }) => {
     loadData();
   }, []);
 
-  const updateAvatar = async (uri) => { 
-    setProfileAvatar(uri); 
-    await AsyncStorage.setItem('profileAvatar', uri); 
-  };
-  
-  const updateProfileData = async (newData) => { 
-    setProfileData(newData); 
-    await AsyncStorage.setItem('profileData', JSON.stringify(newData)); 
-  };
-  
-  const toggleDarkMode = async (value) => { 
-    setIsDarkMode(value); 
-    await AsyncStorage.setItem('isDarkMode', JSON.stringify(value)); 
-  };
-  
-  const loginApp = async () => { 
-    setIsLoggedIn(true); 
-    await AsyncStorage.setItem('isLoggedIn', 'true'); 
-  };
-  
-  const logoutApp = async () => { 
-    setIsLoggedIn(false); 
-    await AsyncStorage.setItem('isLoggedIn', 'false'); 
-  };
-
   const triggerHaptic = (type = 'selection') => {
     if (Platform.OS === 'web') return;
     if (type === 'success') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -77,14 +64,78 @@ export const AppProvider = ({ children }) => {
     else Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
+  const addTask = async (task) => {
+    const newTasks = [...tasks, { ...task, id: Date.now().toString() }];
+    setTasks(newTasks);
+    await AsyncStorage.setItem('tasks', JSON.stringify(newTasks));
+    triggerHaptic('success');
+  };
+
+  const updateTask = async (updatedTask) => {
+    const newTasks = tasks.map(t => t.id === updatedTask.id ? updatedTask : t);
+    setTasks(newTasks);
+    await AsyncStorage.setItem('tasks', JSON.stringify(newTasks));
+    triggerHaptic('success');
+  };
+
+  const deleteTask = async (id) => {
+    const newTasks = tasks.filter(t => t.id !== id);
+    setTasks(newTasks);
+    await AsyncStorage.setItem('tasks', JSON.stringify(newTasks));
+    triggerHaptic('warning');
+  };
+
+  const addSearchHistory = async (query) => {
+    if (!query.trim()) return;
+    const newHistory = [{ query, time: new Date().toLocaleTimeString() }, ...searchHistory.slice(0, 19)];
+    setSearchHistory(newHistory);
+    await AsyncStorage.setItem('searchHistory', JSON.stringify(newHistory));
+  };
+
+  const clearHistory = async () => {
+    setSearchHistory([]);
+    await AsyncStorage.setItem('searchHistory', JSON.stringify([]));
+  };
+
+  const toggleFavorite = async (student) => {
+    const isFav = favorites.some(f => (f.id || f.mssv) === (student.id || student.mssv));
+    let newFavs;
+    if (isFav) {
+      newFavs = favorites.filter(f => (f.id || f.mssv) !== (student.id || student.mssv));
+    } else {
+      newFavs = [...favorites, student];
+    }
+    setFavorites(newFavs);
+    await AsyncStorage.setItem('favorites', JSON.stringify(newFavs));
+  };
+
+  const loginApp = async (mssv) => { 
+    const mockToken = `jwt_token_${mssv}_${Date.now()}`;
+    setIsLoggedIn(true); 
+    setUserToken(mockToken);
+    await AsyncStorage.setItem('isLoggedIn', 'true'); 
+    await AsyncStorage.setItem('userToken', mockToken);
+  };
+  
+  const logoutApp = async () => { 
+    setIsLoggedIn(false); 
+    setUserToken(null);
+    await AsyncStorage.setItem('isLoggedIn', 'false'); 
+    await AsyncStorage.setItem('userToken', '');
+    await AsyncStorage.removeItem('userToken');
+  };
+
   if (!isReady) return null;
 
   return (
     <AppContext.Provider value={{
-      profileAvatar, updateAvatar, profileData, updateProfileData,
-      studentsData, setStudentsData, isDarkMode, toggleDarkMode,
-      isLoggedIn, loginApp, logoutApp,
-      facultyFilter, setFacultyFilter, triggerHaptic
+      profileAvatar, setProfileAvatar, profileData, setProfileData,
+      isDarkMode, setIsDarkMode, toggleDarkMode: (v) => setIsDarkMode(v),
+      isLoggedIn, userToken, loginApp, logoutApp, logout: logoutApp,
+      facultyFilter, setFacultyFilter, triggerHaptic,
+      tasks, addTask, updateTask, deleteTask,
+      searchHistory, addSearchHistory, clearHistory,
+      favorites, toggleFavorite
     }}>
       {children}
     </AppContext.Provider>

@@ -1,111 +1,119 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import React, { useContext } from 'react';
+import { 
+  View, Text, StyleSheet, Image, ScrollView, 
+  TouchableOpacity, Dimensions, Platform, StatusBar
+} from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
+import { AppContext } from '../context/AppContext';
 import { Colors } from '../theme/Theme';
 import GlassCard from '../components/GlassCard';
-import PremiumButton from '../components/PremiumButton';
 
 const { width } = Dimensions.get('window');
 
 const StudentDetailScreen = ({ route, navigation }) => {
-  const { student, isDarkMode } = route.params;
+  const { student } = route.params;
+  const { isDarkMode, favorites, toggleFavorite, triggerHaptic } = useContext(AppContext);
   const theme = isDarkMode ? Colors.dark : Colors.light;
+  
+  const isFavorite = favorites.some(f => f.id === student.id || f.mssv === student.mssv);
+
+  const InfoRow = ({ icon, label, value, delay = 0 }) => (
+    <Animated.View entering={FadeInDown.delay(delay).duration(600)}>
+      <GlassCard intensity={10} isDarkMode={isDarkMode} style={styles.infoCard}>
+        <View style={[styles.iconBox, { backgroundColor: Colors.primary + '15' }]}>
+            <Ionicons name={icon} size={20} color={Colors.primary} />
+        </View>
+        <View style={styles.textContainer}>
+            <Text style={[styles.label, { color: theme.subText }]}>{label}</Text>
+            <Text style={[styles.value, { color: theme.text }]}>{value || 'N/A'}</Text>
+        </View>
+      </GlassCard>
+    </Animated.View>
+  );
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.card }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={24} color={theme.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.text }]}>Chi Tiết Sinh Viên</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+        <StatusBar barStyle="light-content" />
+        <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={styles.header}>
+                <LinearGradient 
+                    colors={[Colors.primary, Colors.accent]} 
+                    style={styles.headerGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                />
+                
+                <View style={styles.navBar}>
+                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                        <Ionicons name="chevron-back" size={28} color="#FFF" />
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        onPress={() => { triggerHaptic(); toggleFavorite(student); }}
+                        style={styles.favBtn}
+                    >
+                        <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={28} color={isFavorite ? Colors.error : "#FFF"} />
+                    </TouchableOpacity>
+                </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
-        <View style={styles.heroSection}>
-            <View style={[styles.heroBg, {backgroundColor: student.type === 'point' ? Colors.primary : Colors.secondary}]} />
-            <GlassCard isDarkMode={isDarkMode} style={styles.profileCard}>
-                <View style={styles.avatarWrapper}>
+                <Animated.View entering={ZoomIn.duration(800)} style={styles.avatarWrapper}>
+                    <View style={styles.avatarGlow} />
                     <Image 
-                        source={{ uri: `https://ui-avatars.com/api/?name=${student.name}&background=random&size=128` }} 
+                        source={{ uri: `https://ui-avatars.com/api/?name=${student.name}&size=200&background=random` }} 
                         style={styles.avatar} 
                     />
-                    <View style={[styles.badgeIcon, {backgroundColor: student.type === 'point' ? Colors.primary : Colors.secondary}]}>
-                        <MaterialCommunityIcons name="trophy" size={16} color="#FFF" />
-                    </View>
-                </View>
-                <Text style={[styles.name, {color: theme.text}]}>{student.name}</Text>
-                <Text style={styles.id}>MSSV: {student.mssv || student.id}</Text>
-            </GlassCard>
-        </View>
+                </Animated.View>
 
-        <View style={styles.statsRow}>
-            <GlassCard isDarkMode={isDarkMode} style={styles.statCard}>
-                <Text style={styles.statLabel}>Hạng</Text>
-                <Text style={[styles.statValue, {color: Colors.warning}]}>#{student.rank || 'N/A'}</Text>
-            </GlassCard>
-            <GlassCard isDarkMode={isDarkMode} style={styles.statCard}>
-                <Text style={styles.statLabel}>{student.type === 'point' ? 'Điểm GPA' : 'Điểm ĐRL'}</Text>
-                <Text style={[styles.statValue, {color: Colors.success}]}>{student.avgPoint || student.avgTrainingPoint}</Text>
-            </GlassCard>
-        </View>
+                <Animated.View entering={FadeInDown.delay(300)} style={styles.titleInfo}>
+                    <Text style={styles.name}>{student.name}</Text>
+                    <Text style={styles.dept}>{student.khoa || 'Khoa Công nghệ Thông tin'}</Text>
+                </Animated.View>
+            </View>
 
-        <View style={styles.section}>
-            <Text style={[styles.sectionTitle, {color: theme.text}]}>Thành tích & Hoạt động</Text>
-            <GlassCard isDarkMode={isDarkMode} style={styles.infoCard}>
-                <ActivityRow icon="medal-outline" text="Sinh viên tiêu biểu học kỳ 1" color={Colors.warning} theme={theme} />
-                <View style={[styles.divider, {backgroundColor: theme.border}]} />
-                <ActivityRow icon="trophy-outline" text="Giải thưởng nghiên cứu khoa học" color={Colors.primary} theme={theme} />
-                <View style={[styles.divider, {backgroundColor: theme.border}]} />
-                <ActivityRow icon="star-outline" text="Đoàn viên tích cực" color={Colors.success} theme={theme} />
-            </GlassCard>
-        </View>
-
-        <PremiumButton 
-            title="Gửi lời chúc mừng" 
-            onPress={() => alert('Đã gửi lời chúc mừng!')}
-            style={{marginTop: 10}}
-        />
-      </ScrollView>
+            <View style={styles.content}>
+                <InfoRow icon="id-card-outline" label="Mã Số Sinh Viên" value={student.mssv || student.id} delay={400} />
+                <InfoRow icon="school-outline" label="Lớp" value={student.lop || '21DTHA1'} delay={500} />
+                <InfoRow icon="calendar-outline" label="Ngày sinh" value={student.ngaySinh || '24/06/2003'} delay={600} />
+                <InfoRow icon="trophy-outline" label="Điểm trung bình" value={student.gpa || '3.85'} delay={700} />
+                
+                <Animated.View entering={FadeInDown.delay(800)} style={styles.actionRow}>
+                    <TouchableOpacity style={[styles.mainAction, { backgroundColor: Colors.primary }]}>
+                        <Ionicons name="chatbubble-ellipses-outline" size={20} color="#FFF" />
+                        <Text style={styles.actionText}>Liên hệ</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.mainAction, { backgroundColor: Colors.secondary }]}>
+                        <Ionicons name="document-text-outline" size={20} color="#FFF" />
+                        <Text style={styles.actionText}>Học bạ</Text>
+                    </TouchableOpacity>
+                </Animated.View>
+            </View>
+        </ScrollView>
     </View>
   );
 };
 
-const ActivityRow = ({ icon, text, color, theme }) => (
-    <View style={styles.activityRow}>
-        <Ionicons name={icon} size={20} color={color} />
-        <Text style={[styles.activityText, {color: theme.text}]}>{text}</Text>
-    </View>
-);
-
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  header: { 
-    paddingTop: 60, paddingBottom: 20, paddingHorizontal: 20, 
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    borderBottomLeftRadius: 30, borderBottomRightRadius: 30, elevation: 4 
-  },
-  headerTitle: { fontSize: 20, fontWeight: 'bold' },
-  backBtn: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-  content: { padding: 20, paddingBottom: 40 },
-  heroSection: { height: 260, alignItems: 'center', marginBottom: 20 },
-  heroBg: { position: 'absolute', top: 0, width: '110%', height: 160, borderBottomLeftRadius: 100, borderBottomRightRadius: 100 },
-  profileCard: { width: '100%', marginTop: 40, alignItems: 'center', paddingVertical: 25 },
-  avatarWrapper: { position: 'relative', marginBottom: 15 },
-  avatar: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: '#FFF' },
-  badgeIcon: { position: 'absolute', bottom: 0, right: 0, width: 28, height: 28, borderRadius: 14, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFF' },
-  name: { fontSize: 22, fontWeight: 'bold' },
-  id: { color: '#999', marginTop: 5 },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25 },
-  statCard: { width: '47%', alignItems: 'center', paddingVertical: 20 },
-  statLabel: { fontSize: 13, color: '#999', marginBottom: 5 },
-  statValue: { fontSize: 28, fontWeight: '900' },
-  section: { marginBottom: 25 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 15, marginLeft: 5 },
-  infoCard: { padding: 10 },
-  activityRow: { flexDirection: 'row', alignItems: 'center', padding: 15 },
-  activityText: { marginLeft: 15, fontSize: 15, fontWeight: '500' },
-  divider: { height: 1, marginHorizontal: 15 },
+  header: { height: 350, alignItems: 'center', justifyContent: 'center' },
+  headerGradient: { ...StyleSheet.absoluteFillObject, borderBottomLeftRadius: 50, borderBottomRightRadius: 50 },
+  navBar: { position: 'absolute', top: Platform.OS === 'ios' ? 60 : 40, width: '100%', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20 },
+  backBtn: { width: 44, height: 44, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  favBtn: { width: 44, height: 44, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
+  avatarWrapper: { marginTop: 40, position: 'relative' },
+  avatarGlow: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(255,255,255,0.3)', transform: [{ scale: 1.1 }] },
+  avatar: { width: 140, height: 140, borderRadius: 70, borderWidth: 4, borderColor: '#FFF' },
+  titleInfo: { alignItems: 'center', marginTop: 20 },
+  name: { fontSize: 26, fontWeight: '900', color: '#FFF' },
+  dept: { fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.8)', marginTop: 5 },
+  content: { padding: 25, marginTop: -30 },
+  infoCard: { flexDirection: 'row', alignItems: 'center', padding: 15, marginBottom: 15 },
+  iconBox: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+  textContainer: { flex: 1 },
+  label: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 },
+  value: { fontSize: 16, fontWeight: '700', marginTop: 2 },
+  actionRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
+  mainAction: { flex: 0.48, height: 56, borderRadius: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
+  actionText: { color: '#FFF', fontWeight: '800', marginLeft: 10, fontSize: 15 }
 });
 
 export default StudentDetailScreen;

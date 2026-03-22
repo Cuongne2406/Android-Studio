@@ -4,6 +4,7 @@ import {
   TextInput, Modal, Pressable, Platform, 
   ActivityIndicator, KeyboardAvoidingView, StyleSheet, Alert, Dimensions
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInRight, ZoomIn } from 'react-native-reanimated';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { AppContext } from '../context/AppContext';
@@ -99,32 +100,41 @@ const ProfileScreen = ({ navigation }) => {
       <ScrollView style={styles.container} contentContainerStyle={{paddingBottom: 40, paddingTop: 10}} showsVerticalScrollIndicator={false}>
         {/* Hero Header */}
         <View style={styles.heroSection}>
-           <View style={[styles.heroBg, {backgroundColor: '#5DA3FA'}]} />
-           <Animated.View entering={ZoomIn.duration(800)} style={{zIndex: 10}}>
-             <GlassCard isDarkMode={isDarkMode} style={styles.profileCard}>
+           <LinearGradient 
+             colors={isDarkMode ? ['#1E293B', '#0F172A'] : [Colors.primary, Colors.accent]} 
+             style={styles.heroBg} 
+             start={{ x: 0, y: 0 }}
+             end={{ x: 1, y: 1 }}
+           />
+           <Animated.View entering={ZoomIn.duration(800)} style={{zIndex: 10, width: '100%', alignItems: 'center'}}>
+             <GlassCard intensity={40} isDarkMode={isDarkMode} style={styles.profileCard}>
                  <View style={styles.avatarWrapper}>
-                     <Image source={{ uri: profileAvatar }} style={styles.avatar} />
+                     <View style={[styles.avatarGlow, {backgroundColor: isDarkMode ? 'rgba(99, 102, 241, 0.3)' : 'rgba(255, 255, 255, 0.4)'}]}>
+                        <Image source={{ uri: profileAvatar }} style={styles.avatar} />
+                     </View>
                      <TouchableOpacity style={styles.cameraCircle}><Ionicons name="camera" size={18} color="#FFF" /></TouchableOpacity>
                  </View>
                  <Text style={[styles.profileName, {color: theme.text}]}>{profileData.name}</Text>
-                 <Text style={[styles.profileId, {color: theme.subText}]}>ID: {profileData.id}</Text>
-                 <TouchableOpacity style={[styles.editLink, {backgroundColor: Colors.primary + '15'}]} onPress={() => setEditModalVisible(true)}>
-                     <Text style={{color: Colors.primary, fontWeight: 'bold', fontSize: 13}}>Chỉnh sửa hồ sơ</Text>
+                 <Text style={[styles.profileId, {color: theme.subText}]}>MSSV: {profileData.id}</Text>
+                 <TouchableOpacity style={[styles.editLink, {backgroundColor: Colors.primary + '20'}]} onPress={() => setEditModalVisible(true)}>
+                     <Text style={{color: isDarkMode ? '#818CF8' : Colors.primary, fontWeight: 'bold', fontSize: 13}}>Chỉnh sửa hồ sơ</Text>
                  </TouchableOpacity>
              </GlassCard>
            </Animated.View>
         </View>
 
         {/* Academic Info */}
-        <Animated.View entering={FadeInRight.delay(200)} style={styles.section}>
+        <Animated.View entering={FadeInRight.delay(200).duration(800)} style={styles.section}>
             <Text style={[styles.sectionTitle, {color: theme.text}]}>Thông Tin Học Tập</Text>
-                <View style={[styles.academicInfo, {backgroundColor: theme.card}]}>
-                    <InfoRow icon="school-outline" label="Trường" value={profileData.school} color="#4A90E2" theme={theme} isDark={isDarkMode} />
-                    <InfoRow icon="people-outline" label="Khoa" value={profileData.major} color="#9B59B6" theme={theme} isDark={isDarkMode} />
-                    <InfoRow icon="person-outline" label="Cố vấn" value={profileData.teacher} color="#E67E22" theme={theme} isDark={isDarkMode} />
-                    <InfoRow icon="calendar-outline" label="Khóa học" value={profileData.year} color="#27AE60" theme={theme} isDark={isDarkMode} />
-                    <InfoRow icon="location-outline" label="Cơ sở" value={profileData.address} color="#E74C3C" theme={theme} isDark={isDarkMode} />
-                </View>
+            <GlassCard intensity={15} isDarkMode={isDarkMode} style={styles.academicInfoGlass}>
+                <InfoRow icon="school" label="Trường" value={profileData.school} color={Colors.primary} theme={theme} isDark={isDarkMode} />
+                <View style={[styles.miniDivider, {backgroundColor: theme.border}]} />
+                <InfoRow icon="business" label="Khoa" value={profileData.major} color={Colors.accent} theme={theme} isDark={isDarkMode} />
+                <View style={[styles.miniDivider, {backgroundColor: theme.border}]} />
+                <InfoRow icon="person" label="Cố vấn" value={profileData.teacher} color={Colors.warning} theme={theme} isDark={isDarkMode} />
+                <View style={[styles.miniDivider, {backgroundColor: theme.border}]} />
+                <InfoRow icon="calendar" label="Khóa học" value={profileData.year} color={Colors.success} theme={theme} isDark={isDarkMode} />
+            </GlassCard>
         </Animated.View>
 
         {/* Faculties Grid */}
@@ -132,25 +142,21 @@ const ProfileScreen = ({ navigation }) => {
             <Text style={[styles.sectionTitle, {color: theme.text}]}>Khám Phá Các Khoa</Text>
             <View style={styles.grid}>
                 {gridData.map((item, idx) => (
-                    <Animated.View key={item.id} entering={FadeInDown.delay(300 + idx * 100)} style={{width: '48%'}}>
-                        <TouchableOpacity 
-                            style={[
-                                styles.gridItem, 
-                                {
-                                    backgroundColor: theme.card, 
-                                    width: '100%',
-                                    elevation: isDarkMode ? 2 : 5,
-                                    shadowOpacity: isDarkMode ? 0.2 : 0.1,
-                                    borderWidth: isDarkMode ? 0 : 1,
-                                    borderColor: 'rgba(0,0,0,0.03)'
-                                }
-                            ]}
-                            onPress={() => navigateToFacultyRanking(item.title)}
-                        >
-                            <View style={[styles.gridIcon, {backgroundColor: item.color + '15'}]}>
-                                <MaterialCommunityIcons name={item.icon} size={28} color={item.color} />
-                            </View>
-                            <Text style={[styles.gridLabel, {color: theme.text, fontWeight: '700'}]} numberOfLines={1}>{item.title}</Text>
+                    <Animated.View key={item.id} entering={FadeInDown.delay(300 + idx * 80)} style={{width: '48%'}}>
+                        <TouchableOpacity onPress={() => navigateToFacultyRanking(item.title)} activeOpacity={0.7}>
+                            <GlassCard 
+                                intensity={10}
+                                isDarkMode={isDarkMode} 
+                                style={styles.gridItemGlass}
+                            >
+                                <LinearGradient
+                                    colors={[item.color + '30', item.color + '10']}
+                                    style={styles.gridIcon}
+                                >
+                                    <MaterialCommunityIcons name={item.icon} size={26} color={item.color} />
+                                </LinearGradient>
+                                <Text style={[styles.gridLabel, {color: theme.text}]} numberOfLines={1}>{item.title}</Text>
+                            </GlassCard>
                         </TouchableOpacity>
                     </Animated.View>
                 ))}
@@ -161,7 +167,7 @@ const ProfileScreen = ({ navigation }) => {
             title="Xem Bảng Điểm Chi Tiết" 
             onPress={() => setModalVisible(true)} 
             icon={<Ionicons name="stats-chart" size={20} color="#FFF" style={{marginRight: 10}} />}
-            style={{marginHorizontal: 20, marginTop: 10}}
+            style={{marginHorizontal: 20, marginTop: 10, height: 55, borderRadius: 18}}
         />
 
         {/* Score Modal */}
@@ -235,39 +241,40 @@ const DetailRow = ({ label, value, color }) => (
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    heroSection: { height: 280, alignItems: 'center', marginBottom: 20 },
-    heroBg: { position: 'absolute', top: 0, width: '100%', height: 180, borderBottomLeftRadius: 50, borderBottomRightRadius: 50 },
-    profileCard: { width: width * 0.85, marginTop: 50, alignItems: 'center', elevation: 20 },
-    avatarWrapper: { position: 'relative', marginTop: -10, marginBottom: 15 },
+    heroSection: { height: 320, alignItems: 'center', marginBottom: 20 },
+    heroBg: { position: 'absolute', top: 0, width: '100%', height: 200, borderBottomLeftRadius: 60, borderBottomRightRadius: 60 },
+    profileCard: { width: width * 0.9, marginTop: 60, alignItems: 'center', paddingVertical: 30 },
+    avatarWrapper: { position: 'relative', marginTop: -15, marginBottom: 15 },
+    avatarGlow: { padding: 4, borderRadius: 55, elevation: 10, shadowColor: Colors.primary, shadowOpacity: 0.3, shadowRadius: 15 },
     avatar: { width: 100, height: 100, borderRadius: 50, borderWidth: 3, borderColor: '#FFF' },
-    cameraCircle: { position: 'absolute', bottom: 0, right: 0, backgroundColor: Colors.primary, width: 30, height: 30, borderRadius: 15, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFF' },
-    profileName: { fontSize: 20, fontWeight: 'bold' },
-    profileId: { fontSize: 13, marginTop: 4 },
-    editLink: { marginTop: 15, paddingHorizontal: 15, paddingVertical: 6, borderRadius: 12 },
-    section: { paddingHorizontal: 20, marginBottom: 25 },
-    sectionTitle: { fontSize: 17, fontWeight: 'bold', marginBottom: 15, marginLeft: 5 },
-    infoCard: { borderRadius: 20, padding: 10, elevation: 4 },
-    infoRow: { flexDirection: 'row', alignItems: 'center', padding: 12 },
-    rowIcon: { width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-    rowLabel: { fontSize: 12, color: '#999' },
-    rowValue: { fontSize: 15, fontWeight: '600', marginTop: 2 },
-    divider: { height: 1, marginHorizontal: 12 },
+    cameraCircle: { position: 'absolute', bottom: 5, right: 5, backgroundColor: Colors.primary, width: 32, height: 32, borderRadius: 16, justifyContent: 'center', alignItems: 'center', borderWidth: 2, borderColor: '#FFF' },
+    profileName: { fontSize: 24, fontWeight: '900', letterSpacing: -0.5 },
+    profileId: { fontSize: 13, marginTop: 4, fontWeight: '600', opacity: 0.7 },
+    editLink: { marginTop: 20, paddingHorizontal: 20, paddingVertical: 8, borderRadius: 14 },
+    section: { paddingHorizontal: 20, marginBottom: 30 },
+    sectionTitle: { fontSize: 18, fontWeight: '900', marginBottom: 15, marginLeft: 5, letterSpacing: -0.5 },
+    academicInfoGlass: { padding: 5, borderRadius: 24 },
+    infoRow: { flexDirection: 'row', alignItems: 'center', padding: 15 },
+    infoIcon: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+    infoLabel: { fontSize: 11, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 2 },
+    infoValue: { fontSize: 15 },
+    miniDivider: { height: 1.5, marginHorizontal: 20, opacity: 0.5 },
     grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-    gridItem: { width: '48%', borderRadius: 18, padding: 15, alignItems: 'center', marginBottom: 15, elevation: 3 },
-    gridIcon: { width: 50, height: 50, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-    gridLabel: { fontSize: 13, fontWeight: '500' },
-    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center' },
-    modalContent: { width: '85%', alignItems: 'center' },
-    modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 25 },
+    gridItemGlass: { width: '100%', borderRadius: 24, padding: 20, alignItems: 'center', marginBottom: 15 },
+    gridIcon: { width: 56, height: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
+    gridLabel: { fontSize: 14, fontWeight: '700', textAlign: 'center' },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.8)', justifyContent: 'center', alignItems: 'center' },
+    modalContent: { width: '85%', alignItems: 'center', padding: 30 },
+    modalTitle: { fontSize: 22, fontWeight: '900', marginBottom: 30 },
     detailRow: { flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 20 },
-    sheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-    sheetContent: { borderTopLeftRadius: 35, borderTopRightRadius: 35, paddingBottom: 40 },
-    sheetHeader: { alignItems: 'center', paddingVertical: 15 },
-    sheetDrag: { width: 40, height: 4, backgroundColor: '#DDD', borderRadius: 2, marginBottom: 15 },
-    sheetTitle: { fontSize: 18, fontWeight: 'bold' },
-    sheetFooter: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 30 },
-    suggestionList: { position: 'absolute', top: 85, width: '100%', borderRadius: 12, borderWidth: 1, elevation: 5, padding: 5, zIndex: 2000 },
-    sugItem: { padding: 15, borderBottomWidth: 0.5, borderBottomColor: '#EEE' },
+    sheetOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+    sheetContent: { borderTopLeftRadius: 40, borderTopRightRadius: 40, paddingBottom: 40, elevation: 20 },
+    sheetHeader: { alignItems: 'center', paddingVertical: 20 },
+    sheetDrag: { width: 45, height: 5, backgroundColor: '#CBD5E1', borderRadius: 3, marginBottom: 15 },
+    sheetTitle: { fontSize: 20, fontWeight: '900' },
+    sheetFooter: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 35 },
+    suggestionList: { position: 'absolute', top: 90, width: '100%', borderRadius: 16, borderWidth: 1, elevation: 15, padding: 5, zIndex: 2000 },
+    sugItem: { padding: 15, borderBottomWidth: 0.5, borderBottomColor: 'rgba(0,0,0,0.05)' },
 });
 
 export default ProfileScreen;

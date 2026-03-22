@@ -1,91 +1,105 @@
-import React, { useState, useContext } from 'react';
+import React, { useContext } from 'react';
 import { 
-  View, Text, ScrollView, TouchableOpacity, 
-  Alert, StyleSheet, Dimensions 
+  View, Text, StyleSheet, ScrollView, 
+  TouchableOpacity, Switch, Alert, Platform 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppContext } from '../context/AppContext';
 import { Colors } from '../theme/Theme';
-import GlassCard from '../components/GlassCard';
-import PremiumInput from '../components/PremiumInput';
-import PremiumButton from '../components/PremiumButton';
 import ScreenHeader from '../components/ScreenHeader';
-
-const { width } = Dimensions.get('window');
+import GlassCard from '../components/GlassCard';
+import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 const SettingsScreen = () => {
   const { 
-    isDarkMode, toggleDarkMode, logoutApp, triggerHaptic 
+    isDarkMode, toggleTheme, clearHistory, 
+    logout, triggerHaptic, searchHistory 
   } = useContext(AppContext);
-  const [isFiltering, setIsFiltering] = useState(false);
-
+  
   const theme = isDarkMode ? Colors.dark : Colors.light;
 
-  const handleLogout = () => {
-      triggerHaptic('warning');
-      Alert.alert(
-          "Đăng xuất",
-          "Bạn có chắc chắn muốn thoát khỏi hệ thống?",
-          [
-              { text: "Hủy", style: "cancel" },
-              { text: "Đăng xuất", onPress: () => { triggerHaptic('error'); logoutApp(); }, style: "destructive" }
-          ]
-      );
+  const handleClearHistory = () => {
+    triggerHaptic('warning');
+    Alert.alert(
+      "Xác nhận",
+      "Bạn có chắc muốn xóa tất cả lịch sử tìm kiếm?",
+      [
+        { text: "Bỏ qua", style: "cancel" },
+        { text: "Xóa hết", onPress: () => { triggerHaptic('success'); clearHistory(); }, style: "destructive" }
+      ]
+    );
   };
 
+  const SettingItem = ({ icon, label, rightElement, onPress, color = Colors.primary, delay = 0 }) => (
+    <Animated.View entering={FadeInDown.delay(delay).duration(600)}>
+      <TouchableOpacity 
+        onPress={onPress} 
+        disabled={!onPress}
+        activeOpacity={0.7}
+      >
+        <GlassCard intensity={15} isDarkMode={isDarkMode} style={styles.settingItem}>
+          <View style={[styles.iconBox, { backgroundColor: color + '15' }]}>
+            <Ionicons name={icon} size={22} color={color} />
+          </View>
+          <Text style={[styles.label, { color: theme.text }]}>{label}</Text>
+          {rightElement || <Ionicons name="chevron-forward" size={18} color={theme.subText} />}
+        </GlassCard>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+
   return (
-    <View style={{flex: 1, backgroundColor: theme.background}}>
-      <ScreenHeader 
-        title="Cấu Hình" 
-        subtitle="Quản lý hệ thống & cá nhân" 
-        theme={theme} 
-        isDarkMode={isDarkMode}
-        rightElement={<Ionicons name="settings-outline" size={24} color={Colors.primary} />}
-      />
-      <ScrollView contentContainerStyle={{ paddingBottom: 50, paddingTop: 10 }}>
+    <View style={{ flex: 1, backgroundColor: theme.background }}>
+      <ScreenHeader title="Cài Đặt" subtitle="Quản lý ứng dụng" theme={theme} isDarkMode={isDarkMode} />
+      
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        <Text style={[styles.sectionTitle, { color: theme.subText }]}>GIAO DIỆN & CẢM GIÁC</Text>
+        <SettingItem 
+          icon={isDarkMode ? "moon" : "sunny"} 
+          label="Chế độ tối (Dark Mode)" 
+          rightElement={
+            <Switch 
+                value={isDarkMode} 
+                onValueChange={() => { triggerHaptic(); toggleTheme(); }}
+                trackColor={{ false: '#CBD5E1', true: Colors.primary + '80' }}
+                thumbColor={isDarkMode ? Colors.primary : '#F1F5F9'}
+            />
+          }
+          color={Colors.primary}
+          delay={100}
+        />
 
-        <View style={styles.container}>
-            {/* Appearance Section */}
-            <Text style={[styles.sectionTitle, {color: theme.subText}]}>GIAO DIỆN</Text>
-            <GlassCard isDarkMode={isDarkMode} style={styles.settingCard}>
-                <TouchableOpacity style={styles.settingRow} onPress={() => { triggerHaptic(); toggleDarkMode(false); }}>
-                    <View style={styles.rowLeft}>
-                        <View style={[styles.iconBox, {backgroundColor: '#FFBE76'}]}><Ionicons name="sunny" size={20} color="#FFF" /></View>
-                        <Text style={[styles.rowText, {color: theme.text}]}>Chế độ sáng</Text>
-                    </View>
-                    <Ionicons name={!isDarkMode ? "radio-button-on" : "radio-button-off"} size={22} color={Colors.primary} />
-                </TouchableOpacity>
-                <View style={[styles.divider, {backgroundColor: theme.border}]} />
-                <TouchableOpacity style={styles.settingRow} onPress={() => { triggerHaptic(); toggleDarkMode(true); }}>
-                    <View style={styles.rowLeft}>
-                        <View style={[styles.iconBox, {backgroundColor: '#30336B'}]}><Ionicons name="moon" size={20} color="#FFF" /></View>
-                        <Text style={[styles.rowText, {color: theme.text}]}>Chế độ tối</Text>
-                    </View>
-                    <Ionicons name={isDarkMode ? "radio-button-on" : "radio-button-off"} size={22} color={Colors.primary} />
-                </TouchableOpacity>
-            </GlassCard>
+        <Text style={[styles.sectionTitle, { color: theme.subText, marginTop: 30 }]}>DỮ LIỆU CÁ NHÂN</Text>
+        <SettingItem 
+          icon="time-outline" 
+          label="Xóa lịch sử tìm kiếm" 
+          onPress={handleClearHistory}
+          rightElement={
+            <View style={styles.badge}>
+                <Text style={styles.badgeText}>{searchHistory.length}</Text>
+            </View>
+          }
+          color={Colors.secondary}
+          delay={200}
+        />
+        <SettingItem 
+          icon="notifications-outline" 
+          label="Thông báo" 
+          delay={300}
+        />
 
+        <Text style={[styles.sectionTitle, { color: theme.subText, marginTop: 30 }]}>TÀI KHOẢN</Text>
+        <SettingItem 
+          icon="log-out-outline" 
+          label="Đăng xuất" 
+          onPress={() => { triggerHaptic('warning'); logout(); }}
+          color={Colors.error}
+          delay={400}
+        />
 
-            {/* Account Section */}
-            <Text style={[styles.sectionTitle, {color: theme.subText, marginTop: 30}]}>HỆ THỐNG</Text>
-            <GlassCard isDarkMode={isDarkMode} style={styles.settingCard}>
-                <TouchableOpacity style={styles.settingRow}>
-                    <View style={styles.rowLeft}>
-                        <View style={[styles.iconBox, {backgroundColor: '#686DE0'}]}><Ionicons name="shield-checkmark" size={20} color="#FFF" /></View>
-                        <Text style={[styles.rowText, {color: theme.text}]}>Bảo mật tài khoản</Text>
-                    </View>
-                    <Ionicons name="chevron-forward" size={20} color={theme.subText} />
-                </TouchableOpacity>
-                <View style={[styles.divider, {backgroundColor: theme.border}]} />
-                <TouchableOpacity style={styles.settingRow} onPress={handleLogout}>
-                    <View style={styles.rowLeft}>
-                        <View style={[styles.iconBox, {backgroundColor: Colors.danger}]}><Ionicons name="log-out" size={20} color="#FFF" /></View>
-                        <Text style={[styles.rowText, {color: Colors.danger, fontWeight: 'bold'}]}>Đăng xuất</Text>
-                    </View>
-                </TouchableOpacity>
-            </GlassCard>
-            
-            <Text style={styles.version}>Phiên bản Pro 2.0.0 • Made with ❤️ for LHU</Text>
+        <View style={styles.footer}>
+            <Text style={[styles.version, { color: theme.subText }]}>Phiên bản 3.0.0 Premium</Text>
+            <Text style={[styles.copyright, { color: theme.subText + '60' }]}>© 2026 Student Pro App UI/UX Design</Text>
         </View>
       </ScrollView>
     </View>
@@ -93,17 +107,16 @@ const SettingsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-    container: { padding: 20 },
-    header: { padding: 25, paddingTop: 60, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomLeftRadius: 30, borderBottomRightRadius: 30, elevation: 4 },
-    headerTitle: { fontSize: 26, fontWeight: '900' },
-    sectionTitle: { fontSize: 12, fontWeight: '900', marginLeft: 10, marginBottom: 15, letterSpacing: 1.5 },
-    settingCard: { padding: 10, elevation: 8 },
-    settingRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 12 },
-    rowLeft: { flexDirection: 'row', alignItems: 'center' },
-    iconBox: { width: 36, height: 36, borderRadius: 10, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
-    rowText: { fontSize: 16, fontWeight: '500' },
-    divider: { height: 1, marginVertical: 4 },
-    version: { textAlign: 'center', marginTop: 40, color: '#999', fontSize: 12 },
+  scrollContent: { padding: 20, paddingBottom: 40 },
+  sectionTitle: { fontSize: 12, fontWeight: '800', letterSpacing: 1.5, marginBottom: 15, marginLeft: 5 },
+  settingItem: { flexDirection: 'row', alignItems: 'center', padding: 15, marginBottom: 12 },
+  iconBox: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+  label: { flex: 1, fontSize: 16, fontWeight: '700' },
+  badge: { backgroundColor: Colors.primary + '20', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+  badgeText: { color: Colors.primary, fontSize: 12, fontWeight: '800' },
+  footer: { alignItems: 'center', marginTop: 50 },
+  version: { fontSize: 14, fontWeight: '700' },
+  copyright: { fontSize: 12, marginTop: 5, fontWeight: '600' }
 });
 
 export default SettingsScreen;

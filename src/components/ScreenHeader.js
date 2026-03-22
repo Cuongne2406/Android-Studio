@@ -1,8 +1,11 @@
-import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, StatusBar } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../theme/Theme';
 
-const ScreenHeader = ({ title, subtitle, rightElement, theme, isDarkMode }) => {
+const ScreenHeader = ({ title, subtitle, rightElement, theme, isDarkMode, showMenu = true }) => {
+  const navigation = useNavigation();
+
   return (
     <View style={[
       styles.header, 
@@ -13,6 +16,14 @@ const ScreenHeader = ({ title, subtitle, rightElement, theme, isDarkMode }) => {
       }
     ]}>
       <View style={styles.content}>
+        {showMenu && (
+          <TouchableOpacity 
+            style={styles.menuBtn} 
+            onPress={() => navigation.openDrawer()}
+          >
+            <Ionicons name="menu-outline" size={30} color={theme.text} />
+          </TouchableOpacity>
+        )}
         <View style={styles.titleContainer}>
           <Text style={[styles.title, { color: theme.text, fontWeight: '900' }]}>{title}</Text>
           {subtitle && (
@@ -63,6 +74,10 @@ const styles = StyleSheet.create({
   },
   rightAction: {
     marginLeft: 15,
+  },
+  menuBtn: {
+    marginRight: 15,
+    padding: 5,
   },
 });
 

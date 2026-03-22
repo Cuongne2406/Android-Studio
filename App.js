@@ -2,7 +2,8 @@ import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { Ionicons } from '@expo/vector-icons';
+import { createDrawerNavigator } from '@react-navigation/drawer';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 // Import modular components
 import { AppProvider, AppContext } from './src/context/AppContext';
@@ -13,9 +14,13 @@ import RankingScreen from './src/screens/RankingScreen';
 import StudentDetailScreen from './src/screens/StudentDetailScreen';
 import ScheduleScreen from './src/screens/ScheduleScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import FavoritesScreen from './src/screens/FavoritesScreen';
+import HistoryScreen from './src/screens/HistoryScreen';
+import CustomDrawerContent from './src/components/CustomDrawerContent';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+const Drawer = createDrawerNavigator();
 const RankingStack = createNativeStackNavigator();
 
 const RankingStackScreen = () => (
@@ -60,6 +65,49 @@ const MainTabs = () => {
   );
 }
 
+const DrawerNavigator = () => {
+    const { isDarkMode } = useContext(AppContext);
+    const theme = isDarkMode ? Colors.dark : Colors.light;
+  
+    return (
+      <Drawer.Navigator
+        drawerContent={(props) => <CustomDrawerContent {...props} />}
+        screenOptions={{
+          headerShown: false,
+          drawerActiveTintColor: Colors.primary,
+          drawerInactiveTintColor: theme.subText,
+          drawerStyle: { backgroundColor: theme.card, width: 280 },
+          drawerLabelStyle: { fontWeight: 'bold', marginLeft: -10 }
+        }}
+      >
+        <Drawer.Screen 
+          name="Home" 
+          component={MainTabs} 
+          options={{ 
+            drawerLabel: 'Trang chủ',
+            drawerIcon: ({ color }) => <Ionicons name="home-outline" size={22} color={color} />
+          }} 
+        />
+        <Drawer.Screen 
+          name="Favorites" 
+          component={FavoritesScreen} 
+          options={{ 
+            drawerLabel: 'Yêu thích',
+            drawerIcon: ({ color }) => <Ionicons name="heart-outline" size={22} color={color} />
+          }} 
+        />
+        <Drawer.Screen 
+          name="History" 
+          component={HistoryScreen} 
+          options={{ 
+            drawerLabel: 'Lịch sử',
+            drawerIcon: ({ color }) => <Ionicons name="time-outline" size={22} color={color} />
+          }} 
+        />
+      </Drawer.Navigator>
+    );
+  };
+
 const AppContent = () => {
   const { isLoggedIn } = useContext(AppContext);
 
@@ -69,7 +117,7 @@ const AppContent = () => {
         {!isLoggedIn ? (
           <Stack.Screen name="Login" component={LoginScreen} />
         ) : (
-          <Stack.Screen name="Main" component={MainTabs} />
+          <Stack.Screen name="Main" component={DrawerNavigator} />
         )}
       </Stack.Navigator>
     </NavigationContainer>

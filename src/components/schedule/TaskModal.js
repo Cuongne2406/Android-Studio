@@ -1,114 +1,169 @@
-import React from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Platform } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState, useEffect } from 'react';
+import { 
+  Modal, View, Text, StyleSheet, TextInput, 
+  TouchableOpacity, Platform, Pressable, KeyboardAvoidingView 
+} from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import GlassCard from '../GlassCard';
-import PremiumInput from '../PremiumInput';
-import PremiumButton from '../PremiumButton';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../theme/Theme';
+import GlassCard from '../GlassCard';
+import { BlurView } from 'expo-blur';
 
 const TaskModal = ({ 
-  visible, onClose, onSave, 
-  taskTitle, setTaskTitle, 
-  date, setDate,
-  isDarkMode, theme, editingTask,
-  showDatePicker, setShowDatePicker,
-  showTimePicker, setShowTimePicker
+    visible, onClose, onSave, editingTask, 
+    isDarkMode, initialDate 
 }) => {
-  
-  const onDateChange = (event, selectedDate) => {
-    setShowDatePicker(Platform.OS === 'ios');
-    if (selectedDate) setDate(selectedDate);
-  };
+    const [title, setTitle] = useState('');
+    const [date, setDate] = useState(new Date());
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
 
-  const onTimeChange = (event, selectedTime) => {
-    setShowTimePicker(Platform.OS === 'ios');
-    if (selectedTime) setDate(selectedTime);
-  };
+    useEffect(() => {
+        if (visible) {
+            if (editingTask) {
+                setTitle(editingTask.title);
+                // Correctly handle date/time string parsing if needed
+                setDate(new Date(editingTask.date + ' ' + editingTask.time));
+            } else {
+                setTitle('');
+                setDate(initialDate || new Date());
+            }
+        }
+    }, [editingTask, visible, initialDate]);
 
-  return (
-    <Modal visible={visible} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlay}>
-            <GlassCard isDarkMode={isDarkMode} style={styles.modalContent}>
-                <View style={styles.sheetHeader}>
-                    <View style={styles.sheetDrag} />
-                    <Text style={[styles.modalTitle, { color: theme.text }]}>
-                        {editingTask ? "Sửa Công Việc" : "Thêm Công Việc Mới"}
-                    </Text>
-                </View>
+    const handleSave = () => {
+        if (!title.trim()) return;
+        onSave({
+            title,
+            date: date.toDateString(),
+            time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            completed: editingTask ? editingTask.completed : false
+        });
+    };
+
+    const onDateChange = (event, selectedDate) => {
+        setShowDatePicker(false);
+        if (selectedDate) {
+            const newDate = new Date(date);
+            newDate.setFullYear(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+            setDate(newDate);
+            if (Platform.OS === 'android') {
+                setTimeout(() => setShowTimePicker(true), 500);
+            }
+        }
+    };
+
+    const onTimeChange = (event, selectedTime) => {
+        setShowTimePicker(false);
+        if (selectedTime) {
+            const newDate = new Date(date);
+            newDate.setHours(selectedTime.getHours(), selectedTime.getMinutes());
+            setDate(newDate);
+        }
+    };
+
+    return (
+        <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+            <View style={styles.overlay}>
+                <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
                 
-                <View style={styles.formContainer}>
-                    <PremiumInput 
-                        label="Tên công việc"
-                        placeholder="Ví dụ: Học React Native..."
-                        value={taskTitle}
-                        onChangeText={setTaskTitle}
-                        isDarkMode={isDarkMode}
-                    />
-
-                    <View style={styles.pickerRow}>
-                        <TouchableOpacity 
-                            style={[styles.pickerBtn, { backgroundColor: theme.border + '30' }]} 
-                            onPress={() => setShowDatePicker(true)}
-                        >
-                            <Ionicons name="calendar" size={20} color={Colors.primary} />
-                            <Text style={[styles.pickerBtnText, { color: theme.text }]}>
-                                {date.toLocaleDateString('vi-VN')}
+                <KeyboardAvoidingView 
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={styles.sheetContainer}
+                >
+                    <BlurView intensity={isDarkMode ? 40 : 80} style={styles.sheetBlur}>
+                        <View style={styles.header}>
+                            <View style={styles.dragBar} />
+                            <Text style={[styles.title, { color: isDarkMode ? '#FFF' : '#000' }]}>
+                                {editingTask ? 'Cập nhật nhiệm vụ' : 'Thêm nhiệm vụ mới'}
                             </Text>
-                        </TouchableOpacity>
+                        </View>
 
-                        <TouchableOpacity 
-                            style={[styles.pickerBtn, { backgroundColor: theme.border + '30' }]} 
-                            onPress={() => setShowTimePicker(true)}
-                        >
-                            <Ionicons name="time" size={20} color={Colors.secondary} />
-                            <Text style={[styles.pickerBtnText, { color: theme.text }]}>
-                                {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
+                        <View style={styles.content}>
+                            <Text style={[styles.label, { color: isDarkMode ? '#CBD5E1' : '#64748B' }]}>Tên nhiệm vụ</Text>
+                            <TextInput
+                                style={[styles.input, { color: isDarkMode ? '#FFF' : '#000', backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}
+                                placeholder="Ví dụ: Nộp bài tập React Native"
+                                placeholderTextColor={isDarkMode ? '#64748B' : '#94A3B8'}
+                                value={title}
+                                onChangeText={setTitle}
+                                autoFocus
+                            />
 
-                    {showDatePicker && (
-                        <DateTimePicker
-                            value={date}
-                            mode="date"
-                            display="default"
-                            onChange={onDateChange}
-                        />
-                    )}
+                            <View style={styles.dateTimeRow}>
+                                <TouchableOpacity 
+                                    style={styles.pickerBtn}
+                                    onPress={() => setShowDatePicker(true)}
+                                >
+                                    <Text style={[styles.label, { marginBottom: 5 }]}>Ngày thực hiện</Text>
+                                    <View style={[styles.pickerBox, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+                                        <Ionicons name="calendar-outline" size={20} color={Colors.primary} />
+                                        <Text style={[styles.pickerText, { color: isDarkMode ? '#FFF' : '#000' }]}>
+                                            {date.toLocaleDateString('vi-VN')}
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
 
-                    {showTimePicker && (
-                        <DateTimePicker
-                            value={date}
-                            mode="time"
-                            is24Hour={true}
-                            display="default"
-                            onChange={onTimeChange}
-                        />
-                    )}
-                </View>
+                                <TouchableOpacity 
+                                    style={styles.pickerBtn}
+                                    onPress={() => setShowTimePicker(true)}
+                                >
+                                    <Text style={[styles.label, { marginBottom: 5 }]}>Giờ thực hiện</Text>
+                                    <View style={[styles.pickerBox, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+                                        <Ionicons name="time-outline" size={20} color={Colors.secondary} />
+                                        <Text style={[styles.pickerText, { color: isDarkMode ? '#FFF' : '#000' }]}>
+                                            {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
+                            </View>
 
-                <View style={styles.modalFooter}>
-                    <PremiumButton title="Hủy" color="#AAA" onPress={onClose} style={{ flex: 1, marginRight: 10 }} />
-                    <PremiumButton title={editingTask ? "Cập nhật" : "Thêm mới"} onPress={onSave} style={{ flex: 1 }} />
-                </View>
-            </GlassCard>
-        </View>
-    </Modal>
-  );
+                            <TouchableOpacity 
+                                style={[styles.saveBtn, { backgroundColor: Colors.primary }]}
+                                onPress={handleSave}
+                            >
+                                <Text style={styles.saveBtnText}>{editingTask ? 'Lưu thay đổi' : 'Tạo nhiệm vụ'}</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity style={styles.cancelBtn} onPress={onClose}>
+                                <Text style={[styles.cancelBtnText, { color: isDarkMode ? '#64748B' : '#94A3B8' }]}>Bỏ qua</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        {(showDatePicker || showTimePicker) && (
+                            <DateTimePicker
+                                value={date}
+                                mode={showDatePicker ? 'date' : 'time'}
+                                is24Hour={true}
+                                display="default"
+                                onChange={showDatePicker ? onDateChange : onTimeChange}
+                            />
+                        )}
+                    </BlurView>
+                </KeyboardAvoidingView>
+            </View>
+        </Modal>
+    );
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  modalContent: { width: '100%', borderTopLeftRadius: 35, borderTopRightRadius: 35, padding: 25, paddingBottom: 40 },
-  sheetHeader: { alignItems: 'center', marginBottom: 20 },
-  sheetDrag: { width: 40, height: 4, backgroundColor: '#DDD', borderRadius: 2, marginBottom: 15 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold' },
-  formContainer: { marginBottom: 20 },
-  pickerRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 15 },
-  pickerBtn: { flexDirection: 'row', alignItems: 'center', padding: 15, borderRadius: 15, width: '48%' },
-  pickerBtnText: { marginLeft: 10, fontWeight: '500' },
-  modalFooter: { flexDirection: 'row' },
+    overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+    sheetContainer: { width: '100%', borderTopLeftRadius: 40, borderTopRightRadius: 40, overflow: 'hidden' },
+    sheetBlur: { padding: 25, paddingBottom: Platform.OS === 'ios' ? 40 : 25 },
+    header: { alignItems: 'center', marginBottom: 25 },
+    dragBar: { width: 40, height: 4, backgroundColor: '#CBD5E1', borderRadius: 2, marginBottom: 15 },
+    title: { fontSize: 20, fontWeight: '900', letterSpacing: -0.5 },
+    content: { width: '100%' },
+    label: { fontSize: 13, fontWeight: '800', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 },
+    input: { height: 56, borderRadius: 16, paddingHorizontal: 16, fontSize: 16, fontWeight: '600', marginBottom: 20 },
+    dateTimeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 30 },
+    pickerBtn: { width: '48%' },
+    pickerBox: { flexDirection: 'row', alignItems: 'center', height: 50, borderRadius: 14, paddingHorizontal: 12 },
+    pickerText: { marginLeft: 10, fontSize: 14, fontWeight: '700' },
+    saveBtn: { height: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center', elevation: 5 },
+    saveBtnText: { color: '#FFF', fontSize: 17, fontWeight: '800' },
+    cancelBtn: { marginTop: 15, paddingVertical: 10, alignItems: 'center' },
+    cancelBtnText: { fontSize: 15, fontWeight: '700' }
 });
 
 export default TaskModal;
