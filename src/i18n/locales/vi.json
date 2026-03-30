@@ -1,0 +1,48 @@
+{
+  "tabs": {
+    "all": "Tất cả",
+    "today": "Hôm nay",
+    "home": "Trang chủ",
+    "settings": "Cài đặt"
+  },
+  "home": {
+    "empty": "Chưa có nhắc nhở nào. Thêm ngay!",
+    "emptyToday": "Không có nhắc nhở nào hôm nay! 🌿"
+  },
+  "modal": {
+    "title": "Nhắc nhở mới",
+    "what": "Bạn muốn được nhắc nhở về điều gì?",
+    "placeholder": "VD: Uống nước",
+    "when": "Khi nào?",
+    "save": "Lưu",
+    "errorPast": "Vui lòng chọn thời gian trong tương lai"
+  },
+  "detail": {
+    "time": "Thời gian",
+    "date": "Ngày",
+    "delete": "Xóa",
+    "share": "Chia sẻ nhắc nhở",
+    "sharePrefix": "🌿 Nhắc nhở:",
+    "shareTime": "⏰ Thời gian:",
+    "shareDate": "📅 Ngày:",
+    "shareSuffix": "Qua Zen Life Reminder"
+  },
+  "settings": {
+    "title": "Cài đặt",
+    "appearance": "Giao diện",
+    "darkMode": "Chế độ tối",
+    "language": "Ngôn ngữ",
+    "dangerZone": "Khu vực nguy hiểm",
+    "clearAll": "Xóa toàn bộ nhắc nhở",
+    "clearConfirmTitle": "Xóa tất cả?",
+    "clearConfirmMsg": "Bạn có chắc chắn muốn xóa toàn bộ dữ liệu? Hành động này không thể hoàn tác.",
+    "cancel": "Hủy",
+    "delete": "Xóa hết"
+  },
+  "priority": {
+    "label": "Mức độ",
+    "low": "Thấp",
+    "medium": "Vừa",
+    "high": "Cao"
+  }
+}

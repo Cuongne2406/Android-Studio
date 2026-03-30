@@ -1,0 +1,48 @@
+{
+  "tabs": {
+    "all": "All Reminders",
+    "today": "Today",
+    "home": "Home",
+    "settings": "Settings"
+  },
+  "home": {
+    "empty": "No reminders yet. Add one!",
+    "emptyToday": "No reminders for today! 🌿"
+  },
+  "modal": {
+    "title": "New Reminder",
+    "what": "What do you want to be reminded of?",
+    "placeholder": "e.g. Drink Water",
+    "when": "When?",
+    "save": "Save",
+    "errorPast": "Please select a future time"
+  },
+  "detail": {
+    "time": "Time",
+    "date": "Date",
+    "delete": "Delete",
+    "share": "Share Reminder",
+    "sharePrefix": "🌿 Reminder:",
+    "shareTime": "⏰ Time:",
+    "shareDate": "📅 Date:",
+    "shareSuffix": "Via Zen Life Reminder"
+  },
+  "settings": {
+    "title": "Settings",
+    "appearance": "Appearance",
+    "darkMode": "Dark Mode",
+    "language": "Language",
+    "dangerZone": "Danger Zone",
+    "clearAll": "Clear All Reminders",
+    "clearConfirmTitle": "Clear All?",
+    "clearConfirmMsg": "Are you sure you want to delete all reminders? This action cannot be undone.",
+    "cancel": "Cancel",
+    "delete": "Delete All"
+  },
+  "priority": {
+    "label": "Priority",
+    "low": "Low",
+    "medium": "Medium",
+    "high": "High"
+  }
+}
