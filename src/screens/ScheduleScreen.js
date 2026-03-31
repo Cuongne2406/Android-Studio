@@ -80,19 +80,20 @@ const ScheduleScreen = () => {
                             <Animated.View entering={FadeInRight.delay(index * 50)}>
                                 <TouchableOpacity 
                                     onPress={() => { triggerHaptic(); setSelectedDate(item.full); }}
-                                    activeOpacity={0.7}
+                                    activeOpacity={0.8}
+                                    style={{ overflow: 'hidden', borderRadius: 24, marginRight: 12 }}
                                 >
                                     <GlassCard 
-                                        intensity={isSelected ? 50 : 10} 
+                                        intensity={10} 
                                         isDarkMode={isDarkMode} 
-                                        style={[
-                                            styles.dayCard, 
-                                            isSelected && { borderColor: Colors.primary }
-                                        ]}
+                                        style={[styles.dayCard, { marginRight: 0, borderWidth: 0 }]}
                                     >
-                                        <Text style={[styles.dayName, { color: isSelected ? Colors.primary : theme.subText }]}>{item.name}</Text>
-                                        <Text style={[styles.dayNum, { color: theme.text, fontSize: isSelected ? 20 : 16, fontWeight: isSelected ? '900' : '600' }]}>{item.day}</Text>
-                                        {isSelected && <View style={styles.activeDot} />}
+                                        {isSelected && (
+                                            <LinearGradient colors={[Colors.primary, Colors.accent]} style={StyleSheet.absoluteFill} />
+                                        )}
+                                        <Text style={[styles.dayName, { color: isSelected ? '#FFF' : theme.subText, zIndex: 1 }]}>{item.name}</Text>
+                                        <Text style={[styles.dayNum, { color: isSelected ? '#FFF' : theme.text, fontSize: isSelected ? 20 : 16, fontWeight: isSelected ? '900' : '600', zIndex: 1 }]}>{item.day}</Text>
+                                        {isSelected && <View style={[styles.activeDot, { backgroundColor: '#FFF', zIndex: 1 }]} />}
                                     </GlassCard>
                                 </TouchableOpacity>
                             </Animated.View>

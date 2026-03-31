@@ -86,7 +86,7 @@ const ProfileScreen = ({ navigation }) => {
   const navigateToFacultyRanking = (major) => {
     triggerHaptic();
     setFacultyFilter(major);
-    navigation.navigate('Ranking');
+    navigation.navigate('Ranking', { screen: 'RankingMain' });
   };
 
   return (
@@ -155,7 +155,7 @@ const ProfileScreen = ({ navigation }) => {
                                 >
                                     <MaterialCommunityIcons name={item.icon} size={26} color={item.color} />
                                 </LinearGradient>
-                                <Text style={[styles.gridLabel, {color: theme.text}]} numberOfLines={1}>{item.title}</Text>
+                                <Text style={[styles.gridLabel, {color: theme.text}]} numberOfLines={2}>{item.title}</Text>
                             </GlassCard>
                         </TouchableOpacity>
                     </Animated.View>
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     infoValue: { fontSize: 15 },
     miniDivider: { height: 1.5, marginHorizontal: 20, opacity: 0.5 },
     grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' },
-    gridItemGlass: { width: '100%', borderRadius: 24, padding: 20, alignItems: 'center', marginBottom: 15 },
+    gridItemGlass: { width: '100%', height: 160, borderRadius: 24, padding: 20, alignItems: 'center', justifyContent: 'center', marginBottom: 15, elevation: 3 },
     gridIcon: { width: 56, height: 56, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
     gridLabel: { fontSize: 14, fontWeight: '700', textAlign: 'center' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.8)', justifyContent: 'center', alignItems: 'center' },

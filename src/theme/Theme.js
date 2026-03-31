@@ -7,21 +7,21 @@ export const Colors = {
   info: '#3B82F6', // Sky Blue
   accent: '#8B5CF6', // Violet
   light: {
-    background: '#F1F5F9', // Light Slate
-    card: 'rgba(255, 255, 255, 0.8)',
-    text: '#1E293B', // Deep Slate
-    subText: '#64748B', // Slate
-    border: 'rgba(226, 232, 240, 0.8)',
-    input: '#FFFFFF',
-    divider: '#E2E8F0'
+    background: '#F8FAFC', // Crisp Slate 50
+    card: '#FFFFFF', // Pure White for clarity
+    text: '#0F172A', // Slate 900
+    subText: '#475569', // Slate 600
+    border: '#E2E8F0', // Slate 200
+    input: '#F1F5F9', // Slate 100
+    divider: '#F1F5F9'
   },
   dark: {
-    background: '#0F172A', // Deep Navy
-    card: 'rgba(30, 41, 59, 0.7)', // Translucent Slate
-    text: '#F8FAFC', // Ghost White
-    subText: '#94A3B8', // Muted Slate
-    border: 'rgba(255, 255, 255, 0.08)',
-    input: '#1E293B',
+    background: '#0F172A', // Deep Navy (Slate 950)
+    card: '#1E293B', // Slate 800
+    text: '#F8FAFC', // Slate 50
+    subText: '#94A3B8', // Slate 400
+    border: '#334155', // Slate 700
+    input: '#0F172A', // Slate 900
     divider: 'rgba(255, 255, 255, 0.05)'
   },
   glass: 'rgba(255, 255, 255, 0.2)',

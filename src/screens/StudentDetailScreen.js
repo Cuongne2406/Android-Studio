@@ -21,7 +21,7 @@ const StudentDetailScreen = ({ route, navigation }) => {
 
   const InfoRow = ({ icon, label, value, delay = 0 }) => (
     <Animated.View entering={FadeInDown.delay(delay).duration(600)}>
-      <GlassCard intensity={10} isDarkMode={isDarkMode} style={styles.infoCard}>
+      <View style={styles.infoCard}>
         <View style={[styles.iconBox, { backgroundColor: Colors.primary + '15' }]}>
             <Ionicons name={icon} size={20} color={Colors.primary} />
         </View>
@@ -29,7 +29,7 @@ const StudentDetailScreen = ({ route, navigation }) => {
             <Text style={[styles.label, { color: theme.subText }]}>{label}</Text>
             <Text style={[styles.value, { color: theme.text }]}>{value || 'N/A'}</Text>
         </View>
-      </GlassCard>
+      </View>
     </Animated.View>
   );
 
@@ -72,10 +72,15 @@ const StudentDetailScreen = ({ route, navigation }) => {
             </View>
 
             <View style={styles.content}>
-                <InfoRow icon="id-card-outline" label="Mã Số Sinh Viên" value={student.mssv || student.id} delay={400} />
-                <InfoRow icon="school-outline" label="Lớp" value={student.lop || '21DTHA1'} delay={500} />
-                <InfoRow icon="calendar-outline" label="Ngày sinh" value={student.ngaySinh || '24/06/2003'} delay={600} />
-                <InfoRow icon="trophy-outline" label="Điểm trung bình" value={student.gpa || '3.85'} delay={700} />
+                <GlassCard intensity={30} isDarkMode={isDarkMode} style={styles.dashboardCard}>
+                    <InfoRow icon="id-card-outline" label="Mã Số Sinh Viên" value={student.mssv || student.id} delay={400} />
+                    <View style={[styles.divider, { backgroundColor: theme.border }]} />
+                    <InfoRow icon="school-outline" label="Lớp" value={student.lop || '21DTHA1'} delay={500} />
+                    <View style={[styles.divider, { backgroundColor: theme.border }]} />
+                    <InfoRow icon="calendar-outline" label="Ngày sinh" value={student.ngaySinh || '24/06/2003'} delay={600} />
+                    <View style={[styles.divider, { backgroundColor: theme.border }]} />
+                    <InfoRow icon="trophy-outline" label="Điểm trung bình" value={student.gpa || '3.85'} delay={700} />
+                </GlassCard>
                 
                 <Animated.View entering={FadeInDown.delay(800)} style={styles.actionRow}>
                     <TouchableOpacity style={[styles.mainAction, { backgroundColor: Colors.primary }]}>
@@ -94,20 +99,22 @@ const StudentDetailScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  header: { height: 350, alignItems: 'center', justifyContent: 'center' },
+  header: { height: 300, alignItems: 'center', justifyContent: 'center' },
   headerGradient: { ...StyleSheet.absoluteFillObject, borderBottomLeftRadius: 50, borderBottomRightRadius: 50 },
   navBar: { position: 'absolute', top: Platform.OS === 'ios' ? 60 : 40, width: '100%', flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 20 },
   backBtn: { width: 44, height: 44, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
   favBtn: { width: 44, height: 44, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center' },
   avatarWrapper: { marginTop: 40, position: 'relative' },
-  avatarGlow: { position: 'absolute', width: 140, height: 140, borderRadius: 70, backgroundColor: 'rgba(255,255,255,0.3)', transform: [{ scale: 1.1 }] },
-  avatar: { width: 140, height: 140, borderRadius: 70, borderWidth: 4, borderColor: '#FFF' },
-  titleInfo: { alignItems: 'center', marginTop: 20 },
-  name: { fontSize: 26, fontWeight: '900', color: '#FFF' },
-  dept: { fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.8)', marginTop: 5 },
+  avatarGlow: { position: 'absolute', width: 110, height: 110, borderRadius: 55, backgroundColor: 'rgba(255,255,255,0.3)', transform: [{ scale: 1.15 }] },
+  avatar: { width: 110, height: 110, borderRadius: 55, borderWidth: 3, borderColor: '#FFF' },
+  titleInfo: { alignItems: 'center', marginTop: 15 },
+  name: { fontSize: 24, fontWeight: '900', color: '#FFF' },
+  dept: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.8)', marginTop: 5 },
   content: { padding: 25, marginTop: -30 },
-  infoCard: { flexDirection: 'row', alignItems: 'center', padding: 15, marginBottom: 15 },
-  iconBox: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+  dashboardCard: { padding: 20, borderRadius: 24, marginBottom: 15, elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: 5 }, shadowOpacity: 0.1, shadowRadius: 10 },
+  divider: { height: 1, marginHorizontal: 15, opacity: 0.5 },
+  infoCard: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
+  iconBox: { width: 44, height: 44, borderRadius: 14, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
   textContainer: { flex: 1 },
   label: { fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 },
   value: { fontSize: 16, fontWeight: '700', marginTop: 2 },

@@ -4,7 +4,7 @@ import { BlurView } from 'expo-blur';
 import { Colors } from '../theme/Theme';
 
 const GlassCard = ({ children, style, isDarkMode, intensity = 20 }) => {
-  const CardContainer = Platform.OS === 'web' ? View : BlurView;
+  const CardContainer = Platform.OS === 'ios' ? BlurView : View;
   
   return (
     <CardContainer 
@@ -13,8 +13,12 @@ const GlassCard = ({ children, style, isDarkMode, intensity = 20 }) => {
       style={[
         styles.card, 
         { 
-          backgroundColor: isDarkMode ? 'rgba(30, 41, 59, 0.5)' : 'rgba(255, 255, 255, 0.6)',
-          borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.4)',
+          backgroundColor: isDarkMode 
+            ? 'rgba(15, 23, 42, 0.92)' // More solid navy for better Dark Mode contrast
+            : Platform.select({ ios: 'rgba(255, 255, 255, 0.9)', android: '#FFFFFF', default: '#FFFFFF' }), // Solid white on Android/Web to kill white-bars
+          borderColor: isDarkMode 
+            ? 'rgba(255, 255, 255, 0.08)' 
+            : 'rgba(0, 0, 0, 0.05)',
         },
         style
       ]}

@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     logo: { width: 70, height: 70 },
     title: { fontSize: 36, fontWeight: '900', color: '#FFF', letterSpacing: 2, textShadowColor: 'rgba(0,0,0,0.2)', textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 10 },
     subtitle: { fontSize: 13, color: 'rgba(255,255,255,0.8)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: 1 },
-    loginCard: { width: '100%', padding: 25 },
+    loginCard: { width: '100%', padding: 25, shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 15 },
     cardTitle: { fontSize: 24, fontWeight: '800', marginBottom: 25, letterSpacing: -0.5 },
     loginBtn: { marginTop: 15, height: 55, borderRadius: 16 },
     suggestionBox: { position: 'absolute', top: 85, width: '100%', borderRadius: 16, borderWidth: 1, elevation: 10, padding: 5, zIndex: 3000 },

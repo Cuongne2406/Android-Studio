@@ -130,7 +130,7 @@ export const AppProvider = ({ children }) => {
   return (
     <AppContext.Provider value={{
       profileAvatar, setProfileAvatar, profileData, setProfileData,
-      isDarkMode, setIsDarkMode, toggleDarkMode: (v) => setIsDarkMode(v),
+      isDarkMode, setIsDarkMode, toggleDarkMode: (v) => setIsDarkMode(v), toggleTheme: () => setIsDarkMode(prev => !prev),
       isLoggedIn, userToken, loginApp, logoutApp, logout: logoutApp,
       facultyFilter, setFacultyFilter, triggerHaptic,
       tasks, addTask, updateTask, deleteTask,

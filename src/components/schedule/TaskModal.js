@@ -71,7 +71,16 @@ const TaskModal = ({
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     style={styles.sheetContainer}
                 >
-                    <BlurView intensity={isDarkMode ? 40 : 80} style={styles.sheetBlur}>
+                    <View style={[
+                        styles.sheetBlur, 
+                        { 
+                            backgroundColor: isDarkMode ? '#0F172A' : '#FFFFFF',
+                            borderTopLeftRadius: 32,
+                            borderTopRightRadius: 32,
+                            borderWidth: 1,
+                            borderColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'
+                        }
+                    ]}>
                         <View style={styles.header}>
                             <View style={styles.dragBar} />
                             <Text style={[styles.title, { color: isDarkMode ? '#FFF' : '#000' }]}>
@@ -139,7 +148,7 @@ const TaskModal = ({
                                 onChange={showDatePicker ? onDateChange : onTimeChange}
                             />
                         )}
-                    </BlurView>
+                    </View>
                 </KeyboardAvoidingView>
             </View>
         </Modal>

@@ -20,7 +20,7 @@ const FavoritesScreen = ({ navigation }) => {
   const renderItem = ({ item, index }) => (
     <Animated.View entering={FadeInDown.delay(index * 100).duration(600)}>
       <TouchableOpacity 
-        onPress={() => { triggerHaptic(); navigation.navigate('StudentDetail', { student: item }); }}
+        onPress={() => { triggerHaptic(); navigation.navigate('Home', { screen: 'Ranking', params: { screen: 'RankingDetail', params: { student: item } } }); }}
         activeOpacity={0.7}
       >
         <GlassCard intensity={20} isDarkMode={isDarkMode} style={styles.favoriteItem}>
@@ -51,7 +51,7 @@ const FavoritesScreen = ({ navigation }) => {
                 <Text style={[styles.emptyText, { color: theme.subText }]}>Chưa có sinh viên nào trong danh sách yêu thích.</Text>
                 <TouchableOpacity 
                     style={[styles.discoverBtn, { backgroundColor: Colors.primary }]}
-                    onPress={() => navigation.navigate('Ranking')}
+                    onPress={() => navigation.navigate('Home', { screen: 'Ranking' })}
                 >
                     <Text style={styles.discoverBtnText}>Khám phá bảng xếp hạng</Text>
                 </TouchableOpacity>
