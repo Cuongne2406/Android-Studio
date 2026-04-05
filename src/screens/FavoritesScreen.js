@@ -5,7 +5,8 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInRight, ZoomIn } from 'react-native-reanimated';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSelector, useDispatch } from 'react-redux';
+import { toggleFavorite } from '../store/slices/favoritesSlice';
 import { AppContext } from '../context/AppContext';
 import { Colors } from '../theme/Theme';
 import ScreenHeader from '../components/ScreenHeader';
@@ -14,7 +15,10 @@ import GlassCard from '../components/GlassCard';
 const { width } = Dimensions.get('window');
 
 const FavoritesScreen = ({ navigation }) => {
-  const { isDarkMode, favorites, toggleFavorite, triggerHaptic } = useContext(AppContext);
+  const dispatch = useDispatch();
+  const { items: favorites } = useSelector(state => state.favorites);
+  const { isDarkMode } = useSelector(state => state.ui);
+  const { triggerHaptic } = useContext(AppContext);
   const theme = isDarkMode ? Colors.dark : Colors.light;
 
   const renderItem = ({ item, index }) => (
@@ -30,7 +34,7 @@ const FavoritesScreen = ({ navigation }) => {
             <Text style={[styles.id, { color: item.mssv ? theme.subText : theme.subText + '80' }]}>{item.mssv || item.id}</Text>
           </View>
           <TouchableOpacity 
-            onPress={(e) => { e.stopPropagation(); triggerHaptic(); toggleFavorite(item); }}
+            onPress={(e) => { e.stopPropagation(); triggerHaptic(); dispatch(toggleFavorite(item)); }}
             style={styles.heartBtn}
           >
             <Ionicons name="heart" size={26} color={Colors.error} />

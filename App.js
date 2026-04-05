@@ -5,7 +5,18 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
-// Import modular components
+// Redux Integration
+import { Provider, useSelector, useDispatch } from 'react-redux';
+import { store } from './src/store';
+import { setToken, setAvatar } from './src/store/slices/authSlice';
+import { setDarkMode } from './src/store/slices/uiSlice';
+import { setFavorites } from './src/store/slices/favoritesSlice';
+import { setHistory } from './src/store/slices/historySlice';
+import { fetchStudents } from './src/store/slices/studentSlice';
+import { fetchTasks } from './src/store/slices/taskSlice';
+import socketService from './src/services/socketService';
+
+// Existing modular components
 import { AppProvider, AppContext } from './src/context/AppContext';
 import { Colors } from './src/theme/Theme';
 import LoginScreen from './src/screens/LoginScreen';
@@ -16,7 +27,9 @@ import ScheduleScreen from './src/screens/ScheduleScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import FavoritesScreen from './src/screens/FavoritesScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
+import AIScreen from './src/screens/AIScreen';
 import CustomDrawerContent from './src/components/CustomDrawerContent';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -31,7 +44,7 @@ const RankingStackScreen = () => (
 );
 
 const MainTabs = () => {
-  const { isDarkMode } = useContext(AppContext);
+  const { isDarkMode } = useSelector(state => state.ui);
   const theme = isDarkMode ? Colors.dark : Colors.light;
 
   return (
@@ -41,6 +54,7 @@ const MainTabs = () => {
           let iconName;
           if (route.name === 'Profile') iconName = focused ? 'person' : 'person-outline';
           else if (route.name === 'Schedule') iconName = focused ? 'calendar' : 'calendar-outline';
+          else if (route.name === 'AI') iconName = focused ? 'sparkles' : 'sparkles-outline';
           else if (route.name === 'Ranking') iconName = focused ? 'trophy' : 'trophy-outline';
           else if (route.name === 'Settings') iconName = focused ? 'settings' : 'settings-outline';
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -59,6 +73,7 @@ const MainTabs = () => {
     >
       <Tab.Screen name="Profile" component={ProfileScreen} options={{ tabBarLabel: 'Hồ Sơ' }} />
       <Tab.Screen name="Schedule" component={ScheduleScreen} options={{ tabBarLabel: 'Lịch Học' }} />
+      <Tab.Screen name="AI" component={AIScreen} options={{ tabBarLabel: 'Trợ Lý AI' }} />
       <Tab.Screen name="Ranking" component={RankingStackScreen} options={{ tabBarLabel: 'Xếp Hạng' }} />
       <Tab.Screen name="Settings" component={SettingsScreen} options={{ tabBarLabel: 'Cài Đặt' }} />
     </Tab.Navigator>
@@ -66,7 +81,7 @@ const MainTabs = () => {
 }
 
 const DrawerNavigator = () => {
-    const { isDarkMode } = useContext(AppContext);
+    const { isDarkMode } = useSelector(state => state.ui);
     const theme = isDarkMode ? Colors.dark : Colors.light;
   
     return (
@@ -109,7 +124,45 @@ const DrawerNavigator = () => {
   };
 
 const AppContent = () => {
-  const { isLoggedIn } = useContext(AppContext);
+  const { isLoggedIn } = useSelector(state => state.auth);
+  const dispatch = useDispatch();
+
+  React.useEffect(() => {
+    const checkStatus = async () => {
+      try {
+        const token = await AsyncStorage.getItem('userToken');
+        const theme = await AsyncStorage.getItem('isDarkMode');
+        const favorites = await AsyncStorage.getItem('favorites');
+        const history = await AsyncStorage.getItem('searchHistory');
+        const avatar = await AsyncStorage.getItem('profileAvatar');
+
+        if (token) {
+          dispatch(setToken(token));
+          dispatch(fetchTasks());
+        }
+        if (theme !== null) dispatch(setDarkMode(JSON.parse(theme)));
+        if (favorites) dispatch(setFavorites(JSON.parse(favorites)));
+        if (history) dispatch(setHistory(JSON.parse(history)));
+        if (avatar) dispatch(setAvatar(avatar));
+
+        dispatch(fetchStudents());
+        
+        // Connect WebSockets
+        socketService.connect();
+        socketService.on('update_students', (data) => {
+            dispatch(fetchStudents());
+        });
+        socketService.on('new_notification', (notif) => {
+            // Future logic for notifications
+            console.log("New notification:", notif);
+        });
+
+      } catch (e) {
+        console.error("Initialization error:", e);
+      }
+    };
+    checkStatus();
+  }, []);
 
   return (
     <NavigationContainer>
@@ -126,8 +179,10 @@ const AppContent = () => {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <Provider store={store}>
+      <AppProvider> 
+        <AppContent />
+      </AppProvider>
+    </Provider>
   );
 }

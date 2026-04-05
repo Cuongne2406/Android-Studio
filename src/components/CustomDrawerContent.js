@@ -4,6 +4,8 @@ import { DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawe
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInLeft } from 'react-native-reanimated';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../store/slices/authSlice';
 import { AppContext } from '../context/AppContext';
 import { Colors } from '../theme/Theme';
 import GlassCard from './GlassCard';
@@ -11,12 +13,15 @@ import GlassCard from './GlassCard';
 const { width } = Dimensions.get('window');
 
 const CustomDrawerContent = (props) => {
-  const { profileData, profileAvatar, isDarkMode, logoutApp, triggerHaptic } = useContext(AppContext);
+  const dispatch = useDispatch();
+  const { profileData } = useSelector(state => state.auth);
+  const { isDarkMode } = useSelector(state => state.ui);
+  const { profileAvatar, triggerHaptic } = useContext(AppContext);
   const theme = isDarkMode ? Colors.dark : Colors.light;
 
   const handleLogout = () => {
     triggerHaptic('warning');
-    logoutApp();
+    dispatch(logout());
   };
 
   return (

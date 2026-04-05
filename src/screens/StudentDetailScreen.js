@@ -4,8 +4,8 @@ import {
   TouchableOpacity, Dimensions, Platform, StatusBar
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import { useSelector, useDispatch } from 'react-redux';
+import { toggleFavorite } from '../store/slices/favoritesSlice';
 import { AppContext } from '../context/AppContext';
 import { Colors } from '../theme/Theme';
 import GlassCard from '../components/GlassCard';
@@ -14,7 +14,10 @@ const { width } = Dimensions.get('window');
 
 const StudentDetailScreen = ({ route, navigation }) => {
   const { student } = route.params;
-  const { isDarkMode, favorites, toggleFavorite, triggerHaptic } = useContext(AppContext);
+  const dispatch = useDispatch();
+  const { items: favorites } = useSelector(state => state.favorites);
+  const { isDarkMode } = useSelector(state => state.ui);
+  const { triggerHaptic } = useContext(AppContext);
   const theme = isDarkMode ? Colors.dark : Colors.light;
   
   const isFavorite = favorites.some(f => f.id === student.id || f.mssv === student.mssv);
@@ -50,7 +53,7 @@ const StudentDetailScreen = ({ route, navigation }) => {
                         <Ionicons name="chevron-back" size={28} color="#FFF" />
                     </TouchableOpacity>
                     <TouchableOpacity 
-                        onPress={() => { triggerHaptic(); toggleFavorite(student); }}
+                        onPress={() => { triggerHaptic(); dispatch(toggleFavorite(student)); }}
                         style={styles.favBtn}
                     >
                         <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={28} color={isFavorite ? Colors.error : "#FFF"} />

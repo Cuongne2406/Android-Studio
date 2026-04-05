@@ -6,7 +6,9 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInRight, ZoomIn, Layout } from 'react-native-reanimated';
-import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchStudents } from '../store/slices/studentSlice';
+import { setFacultyFocus } from '../store/slices/uiSlice';
 import { AppContext } from '../context/AppContext';
 import { Colors } from '../theme/Theme';
 import ScreenHeader from '../components/ScreenHeader';
@@ -16,14 +18,23 @@ import GlassCard from '../components/GlassCard';
 const { width } = Dimensions.get('window');
 
 const RankingScreen = ({ navigation }) => {
-  const { isDarkMode, facultyFilter, setFacultyFilter, addSearchHistory, triggerHaptic, studentsData } = useContext(AppContext);
+  const dispatch = useDispatch();
+  const { studentByPoint, studentByTraining, loading } = useSelector(state => state.students);
+  const { isDarkMode, facultyFocus } = useSelector(state => state.ui);
+  const { addSearchHistory, triggerHaptic } = useContext(AppContext);
   const [searchQuery, setSearchQuery] = useState('');
+
+  React.useEffect(() => {
+    if (studentByPoint.length === 0) {
+      dispatch(fetchStudents());
+    }
+  }, []);
   
   const theme = isDarkMode ? Colors.dark : Colors.light;
 
   // Restore faculty filtering logic
   const displayData = useMemo(() => {
-    if (!studentsData || !studentsData.point) return [];
+    if (!studentByPoint || !studentByTraining) return [];
     
     const filterFn = s => {
         const lowerSearch = searchQuery.toLowerCase();
@@ -31,17 +42,17 @@ const RankingScreen = ({ navigation }) => {
                              (s.mssv && s.mssv.toString().includes(searchQuery)) ||
                              (s.id && s.id.toString().includes(searchQuery));
         
-        if (!facultyFilter) return matchesSearch;
+        if (!facultyFocus) return matchesSearch;
         
         const studentKhoa = s.khoa || (s.type === 'point' ? 'Khoa Công nghệ Thông tin' : 'Khoa Quản trị Kinh doanh');
-        return matchesSearch && studentKhoa.toLowerCase().includes(facultyFilter.toLowerCase());
+        return matchesSearch && studentKhoa.toLowerCase().includes(facultyFocus.toLowerCase());
     };
 
     return [
-      { title: 'Bảng Vàng Học Tập', icon: 'school', iconColor: Colors.primary, data: studentsData.point.filter(filterFn), type: 'point' },
-      { title: 'Ngôi Sao Rèn Luyện', icon: 'star-circle', iconColor: Colors.secondary, data: studentsData.training.filter(filterFn), type: 'training' }
+      { title: 'Bảng Vàng Học Tập', icon: 'school', iconColor: Colors.primary, data: studentByPoint.filter(filterFn), type: 'point' },
+      { title: 'Ngôi Sao Rèn Luyện', icon: 'star-circle', iconColor: Colors.secondary, data: studentByTraining.filter(filterFn), type: 'training' }
     ];
-  }, [searchQuery, facultyFilter, studentsData]);
+  }, [searchQuery, facultyFocus, studentByPoint, studentByTraining]);
 
   const handleStudentPress = (student, index, type) => {
     triggerHaptic('selection');

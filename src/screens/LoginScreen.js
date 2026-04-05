@@ -8,6 +8,8 @@ import Animated, {
   FadeInDown, FadeInUp, ZoomIn, 
   useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence 
 } from 'react-native-reanimated';
+import { useSelector, useDispatch } from 'react-redux';
+import { loginUser } from '../store/slices/authSlice';
 import { AppContext } from '../context/AppContext';
 import { Colors } from '../theme/Theme';
 import PremiumButton from '../components/PremiumButton';
@@ -17,10 +19,11 @@ import GlassCard from '../components/GlassCard';
 const { width, height } = Dimensions.get('window');
 
 const LoginScreen = () => {
-    const { loginApp, isDarkMode, triggerHaptic } = useContext(AppContext);
+    const dispatch = useDispatch();
+    const { isDarkMode, triggerHaptic } = useContext(AppContext);
+    const { loading } = useSelector(state => state.auth);
     const [mssv, setMssv] = useState('');
     const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
     
     const accounts = [
         { label: "123000991 - Nguyễn Trung Cường", value: "123000991" },
@@ -66,9 +69,7 @@ const LoginScreen = () => {
             triggerHaptic('error');
             return;
         }
-        setLoading(true);
-        await loginApp(mssv, password);
-        setLoading(false);
+        dispatch(loginUser({ mssv, password }));
     };
 
     const theme = isDarkMode ? Colors.dark : Colors.light;

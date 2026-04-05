@@ -4,6 +4,10 @@ import {
   TouchableOpacity, Switch, Alert, Platform 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useSelector, useDispatch } from 'react-redux';
+import { logout } from '../store/slices/authSlice';
+import { toggleDarkMode } from '../store/slices/uiSlice';
+import { clearHistory } from '../store/slices/historySlice';
 import { AppContext } from '../context/AppContext';
 import { Colors } from '../theme/Theme';
 import ScreenHeader from '../components/ScreenHeader';
@@ -11,10 +15,10 @@ import GlassCard from '../components/GlassCard';
 import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 
 const SettingsScreen = () => {
-  const { 
-    isDarkMode, toggleTheme, clearHistory, 
-    logout, triggerHaptic, searchHistory 
-  } = useContext(AppContext);
+  const dispatch = useDispatch();
+  const { isDarkMode } = useSelector(state => state.ui);
+  const { searchHistory } = useSelector(state => state.history);
+  const { triggerHaptic } = useContext(AppContext);
   
   const theme = isDarkMode ? Colors.dark : Colors.light;
 
@@ -25,7 +29,7 @@ const SettingsScreen = () => {
       "Bạn có chắc muốn xóa tất cả lịch sử tìm kiếm?",
       [
         { text: "Bỏ qua", style: "cancel" },
-        { text: "Xóa hết", onPress: () => { triggerHaptic('success'); clearHistory(); }, style: "destructive" }
+        { text: "Xóa hết", onPress: () => { triggerHaptic('success'); dispatch(clearHistory()); }, style: "destructive" }
       ]
     );
   };
@@ -60,7 +64,7 @@ const SettingsScreen = () => {
           rightElement={
             <Switch 
                 value={isDarkMode} 
-                onValueChange={() => { triggerHaptic(); toggleTheme(); }}
+                onValueChange={() => { triggerHaptic(); dispatch(toggleDarkMode()); }}
                 trackColor={{ false: '#CBD5E1', true: Colors.primary + '80' }}
                 thumbColor={isDarkMode ? Colors.primary : '#F1F5F9'}
             />
@@ -92,7 +96,7 @@ const SettingsScreen = () => {
         <SettingItem 
           icon="log-out-outline" 
           label="Đăng xuất" 
-          onPress={() => { triggerHaptic('warning'); logout(); }}
+          onPress={() => { triggerHaptic('warning'); dispatch(logout()); }}
           color={Colors.error}
           delay={400}
         />

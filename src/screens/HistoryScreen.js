@@ -6,6 +6,7 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInRight, ZoomIn } from 'react-native-reanimated';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSelector } from 'react-redux';
 import { AppContext } from '../context/AppContext';
 import { Colors } from '../theme/Theme';
 import ScreenHeader from '../components/ScreenHeader';
@@ -14,7 +15,8 @@ import GlassCard from '../components/GlassCard';
 const { width } = Dimensions.get('window');
 
 const HistoryScreen = () => {
-  const { isDarkMode, searchHistory, triggerHaptic } = useContext(AppContext);
+  const { searchHistory } = useSelector(state => state.history);
+  const { isDarkMode, triggerHaptic } = useContext(AppContext);
   const theme = isDarkMode ? Colors.dark : Colors.light;
 
   const renderItem = ({ item, index }) => (

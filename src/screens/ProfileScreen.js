@@ -7,6 +7,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInRight, ZoomIn } from 'react-native-reanimated';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useSelector, useDispatch } from 'react-redux';
+import { updateProfile } from '../store/slices/authSlice';
 import { AppContext } from '../context/AppContext';
 import { Colors } from '../theme/Theme';
 import GlassCard from '../components/GlassCard';
@@ -18,10 +20,10 @@ import Toast from '../components/Toast';
 const { width } = Dimensions.get('window');
 
 const ProfileScreen = ({ navigation }) => {
-  const { 
-    profileAvatar, profileData, updateProfileData, 
-    isDarkMode, setFacultyFilter, triggerHaptic 
-  } = useContext(AppContext);
+  const dispatch = useDispatch();
+  const { profileData } = useSelector(state => state.auth);
+  const { isDarkMode } = useSelector(state => state.ui);
+  const { profileAvatar, triggerHaptic } = useContext(AppContext);
   const [modalVisible, setModalVisible] = useState(false);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const toastRef = React.useRef(null);
@@ -75,7 +77,7 @@ const ProfileScreen = ({ navigation }) => {
     triggerHaptic('selection');
     setIsSaving(true);
     setTimeout(() => {
-        updateProfileData({ ...profileData, name: editName, id: editId, major: editMajor });
+        dispatch(updateProfile({ ...profileData, name: editName, id: editId, major: editMajor }));
         setIsSaving(false);
         setEditModalVisible(false);
         triggerHaptic('success');
@@ -85,7 +87,7 @@ const ProfileScreen = ({ navigation }) => {
 
   const navigateToFacultyRanking = (major) => {
     triggerHaptic();
-    setFacultyFilter(major);
+    dispatch(setFacultyFocus(major));
     navigation.navigate('Ranking');
   };
 

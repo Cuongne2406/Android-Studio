@@ -7,7 +7,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { 
   FadeInDown, FadeInRight, ZoomIn 
 } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import { useSelector, useDispatch } from 'react-redux';
+import { fetchTasks, addTask, updateTask, deleteTask } from '../store/slices/taskSlice';
 import { AppContext } from '../context/AppContext';
 import { Colors } from '../theme/Theme';
 import ScreenHeader from '../components/ScreenHeader';
@@ -18,10 +19,16 @@ import TaskModal from '../components/schedule/TaskModal';
 const { width } = Dimensions.get('window');
 
 const ScheduleScreen = () => {
-    const { 
-        tasks, addTask, updateTask, deleteTask, 
-        isDarkMode, triggerHaptic 
-    } = useContext(AppContext);
+    const dispatch = useDispatch();
+    const { tasks, loading } = useSelector(state => state.tasks);
+    const { isDarkMode } = useSelector(state => state.ui);
+    const { triggerHaptic } = useContext(AppContext);
+
+    useEffect(() => {
+        if (tasks.length === 0) {
+            dispatch(fetchTasks());
+        }
+    }, []);
     
     const [selectedDate, setSelectedDate] = useState(new Date().toDateString());
     const [modalVisible, setModalVisible] = useState(false);
@@ -50,9 +57,9 @@ const ScheduleScreen = () => {
 
     const handleAddTask = (task) => {
         if (editingTask) {
-            updateTask({ ...task, id: editingTask._id || editingTask.id });
+            dispatch(updateTask({ ...task, id: editingTask._id || editingTask.id }));
         } else {
-            addTask(task);
+            dispatch(addTask(task));
         }
         setModalVisible(false);
         setEditingTask(null);
@@ -130,7 +137,7 @@ const ScheduleScreen = () => {
                             <Animated.View entering={FadeInDown.delay(index * 100).duration(600)}>
                                 <TaskItem 
                                     item={item} 
-                                    onDelete={() => deleteTask(item._id || item.id)} 
+                                    onDelete={() => dispatch(deleteTask(item._id || item.id))} 
                                     onEdit={() => handleEditTask(item)}
                                     theme={theme}
                                     isDarkMode={isDarkMode}
