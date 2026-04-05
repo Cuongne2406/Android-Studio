@@ -5,10 +5,15 @@ import {
   ActivityIndicator
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { 
+  Ionicons, 
+  MaterialCommunityIcons 
+} from '@expo/vector-icons';
 import Animated, { FadeInDown, FadeInRight, ZoomIn, Layout } from 'react-native-reanimated';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchStudents } from '../store/slices/studentSlice';
 import { setFacultyFocus } from '../store/slices/uiSlice';
+import { addHistory } from '../store/slices/historySlice';
 import { AppContext } from '../context/AppContext';
 import { Colors } from '../theme/Theme';
 import ScreenHeader from '../components/ScreenHeader';
@@ -21,7 +26,7 @@ const RankingScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const { studentByPoint, studentByTraining, loading } = useSelector(state => state.students);
   const { isDarkMode, facultyFocus } = useSelector(state => state.ui);
-  const { addSearchHistory, triggerHaptic } = useContext(AppContext);
+  const { triggerHaptic } = useContext(AppContext);
   const [searchQuery, setSearchQuery] = useState('');
 
   React.useEffect(() => {
@@ -57,7 +62,7 @@ const RankingScreen = ({ navigation }) => {
   const handleStudentPress = (student, index, type) => {
     triggerHaptic('selection');
     if (searchQuery) {
-        addSearchHistory(searchQuery);
+        dispatch(addHistory({ query: searchQuery, timestamp: new Date().toISOString() }));
     }
     navigation.navigate('RankingDetail', { 
         student: { ...student, rank: index + 1, type },

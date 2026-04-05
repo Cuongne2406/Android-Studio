@@ -16,7 +16,8 @@ const { width } = Dimensions.get('window');
 
 const HistoryScreen = () => {
   const { searchHistory } = useSelector(state => state.history);
-  const { isDarkMode, triggerHaptic } = useContext(AppContext);
+  const { isDarkMode } = useSelector(state => state.ui);
+  const { triggerHaptic } = useContext(AppContext);
   const theme = isDarkMode ? Colors.dark : Colors.light;
 
   const renderItem = ({ item, index }) => (

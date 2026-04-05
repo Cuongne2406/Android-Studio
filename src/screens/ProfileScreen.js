@@ -9,6 +9,7 @@ import Animated, { FadeInDown, FadeInRight, ZoomIn } from 'react-native-reanimat
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateProfile } from '../store/slices/authSlice';
+import { setFacultyFocus } from '../store/slices/uiSlice';
 import { AppContext } from '../context/AppContext';
 import { Colors } from '../theme/Theme';
 import GlassCard from '../components/GlassCard';

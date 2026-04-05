@@ -4,6 +4,7 @@ import {
   Dimensions, Platform, Image, StatusBar
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import Animated, { 
   FadeInDown, FadeInRight, ZoomIn 
 } from 'react-native-reanimated';

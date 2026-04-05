@@ -6,6 +6,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSelector, useDispatch } from 'react-redux';
 import { toggleFavorite } from '../store/slices/favoritesSlice';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown, ZoomIn } from 'react-native-reanimated';
 import { AppContext } from '../context/AppContext';
 import { Colors } from '../theme/Theme';
 import GlassCard from '../components/GlassCard';
