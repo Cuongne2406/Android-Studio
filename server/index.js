@@ -8,6 +8,7 @@ const { Server } = require('socket.io');
 const authRoutes = require('./routes/authRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const taskRoutes = require('./routes/taskRoutes');
+const friendRoutes = require('./routes/friendRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
@@ -48,6 +49,7 @@ app.get('/', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/friends', friendRoutes);
 app.use('/api/ai', aiRoutes);
 
 // Error Handling Middleware

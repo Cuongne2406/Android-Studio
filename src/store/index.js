@@ -5,6 +5,7 @@ import taskReducer from './slices/taskSlice';
 import uiReducer from './slices/uiSlice';
 import historyReducer from './slices/historySlice';
 import favoritesReducer from './slices/favoritesSlice';
+import friendReducer from './slices/friendSlice';
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     ui: uiReducer,
     history: historyReducer,
     favorites: favoritesReducer,
+    friends: friendReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

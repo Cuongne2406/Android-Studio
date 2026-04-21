@@ -14,6 +14,7 @@ import { setFavorites } from './src/store/slices/favoritesSlice';
 import { setHistory } from './src/store/slices/historySlice';
 import { fetchStudents } from './src/store/slices/studentSlice';
 import { fetchTasks } from './src/store/slices/taskSlice';
+import { updateFriendLocally } from './src/store/slices/friendSlice';
 import socketService from './src/services/socketService';
 
 // Existing modular components
@@ -28,6 +29,8 @@ import SettingsScreen from './src/screens/SettingsScreen';
 import FavoritesScreen from './src/screens/FavoritesScreen';
 import HistoryScreen from './src/screens/HistoryScreen';
 import AIScreen from './src/screens/AIScreen';
+import FriendListScreen from './src/screens/FriendListScreen';
+import AddFriendScreen from './src/screens/AddFriendScreen';
 import CustomDrawerContent from './src/components/CustomDrawerContent';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -35,12 +38,20 @@ const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 const Drawer = createDrawerNavigator();
 const RankingStack = createNativeStackNavigator();
+const FriendStack = createNativeStackNavigator();
 
 const RankingStackScreen = () => (
     <RankingStack.Navigator screenOptions={{ headerShown: false }}>
         <RankingStack.Screen name="RankingMain" component={RankingScreen} />
         <RankingStack.Screen name="RankingDetail" component={StudentDetailScreen} />
     </RankingStack.Navigator>
+);
+
+const FriendStackScreen = () => (
+    <FriendStack.Navigator screenOptions={{ headerShown: false }}>
+        <FriendStack.Screen name="FriendList" component={FriendListScreen} />
+        <FriendStack.Screen name="AddFriend" component={AddFriendScreen} />
+    </FriendStack.Navigator>
 );
 
 const MainTabs = () => {
@@ -119,6 +130,14 @@ const DrawerNavigator = () => {
             drawerIcon: ({ color }) => <Ionicons name="time-outline" size={22} color={color} />
           }} 
         />
+        <Drawer.Screen 
+          name="Friends" 
+          component={FriendStackScreen} 
+          options={{ 
+            drawerLabel: 'Bạn bè',
+            drawerIcon: ({ color }) => <Ionicons name="people-outline" size={22} color={color} />
+          }} 
+        />
       </Drawer.Navigator>
     );
   };
@@ -151,6 +170,9 @@ const AppContent = () => {
         socketService.connect();
         socketService.on('update_students', (data) => {
             dispatch(fetchStudents());
+        });
+        socketService.on('update_friends', (data) => {
+            dispatch(updateFriendLocally(data));
         });
         socketService.on('new_notification', (notif) => {
             // Future logic for notifications
