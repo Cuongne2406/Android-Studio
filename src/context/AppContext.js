@@ -10,8 +10,8 @@ export const AppProvider = ({ children }) => {
   const [isReady, setIsReady] = useState(false);
   const [profileAvatar, setProfileAvatar] = useState('https://cdn-icons-png.flaticon.com/512/3135/3135715.png');
   const [profileData, setProfileData] = useState({
-    name: "Sinh viên LHU", id: "---", major: "---",
-    school: "Đại học Lạc Hồng", teacher: "---", year: "2023 - 2027",
+    name: "Sinh viên LHU", id: "---", major: "CNTT",
+    school: "Đại học Lạc Hồng", teacher: "Nguyễn Khắc Hoàng", year: "2023 - 2027",
     address: "Biên Hòa, Đồng Nai", avgPoint: 0, trainingPoint: 0, rank: "---"
   });
 
@@ -60,6 +60,8 @@ export const AppProvider = ({ children }) => {
       try {
         const savedTheme = await AsyncStorage.getItem('isDarkMode');
         const token = await AsyncStorage.getItem('userToken');
+        const userName = await AsyncStorage.getItem('userName');
+        const userMssv = await AsyncStorage.getItem('userMssv');
         const savedHistory = await AsyncStorage.getItem('searchHistory');
         const savedFavorites = await AsyncStorage.getItem('favorites');
         
@@ -70,6 +72,9 @@ export const AppProvider = ({ children }) => {
         if (token) {
             setUserToken(token);
             setIsLoggedIn(true);
+            if (userName && userMssv) {
+                setProfileData(prev => ({ ...prev, name: userName, id: userMssv }));
+            }
             await fetchTasks();
         }
         await fetchStudents();
@@ -87,8 +92,10 @@ export const AppProvider = ({ children }) => {
         const { data } = await apiClient.post('/auth/login', { mssv, password });
         setIsLoggedIn(true); 
         setUserToken(data.token);
-        setProfileData({ ...profileData, name: data.name, id: data.mssv });
+        setProfileData(prev => ({ ...prev, name: data.name, id: data.mssv }));
         await AsyncStorage.setItem('userToken', data.token);
+        await AsyncStorage.setItem('userName', data.name);
+        await AsyncStorage.setItem('userMssv', data.mssv);
         await fetchTasks();
         triggerHaptic('success');
         return true;
@@ -103,7 +110,10 @@ export const AppProvider = ({ children }) => {
     setIsLoggedIn(false); 
     setUserToken(null);
     setTasks([]);
+    setProfileData(prev => ({ ...prev, name: "Sinh viên LHU", id: "---" }));
     await AsyncStorage.removeItem('userToken');
+    await AsyncStorage.removeItem('userName');
+    await AsyncStorage.removeItem('userMssv');
     triggerHaptic('warning');
   };
 
