@@ -6,9 +6,9 @@ const http = require('http');
 const { Server } = require('socket.io');
 
 const authRoutes = require('./routes/authRoutes');
-const studentRoutes = require('./routes/studentRoutes');
-const taskRoutes = require('./routes/taskRoutes');
-const friendRoutes = require('./routes/friendRoutes');
+const plantRoutes = require('./routes/plantRoutes');
+const gardenRoutes = require('./routes/gardenRoutes');
+const orderRoutes = require('./routes/orderRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
@@ -47,9 +47,9 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
-app.use('/api/students', studentRoutes);
-app.use('/api/tasks', taskRoutes);
-app.use('/api/friends', friendRoutes);
+app.use('/api/plants', plantRoutes);
+app.use('/api/garden', gardenRoutes);
+app.use('/api/orders', orderRoutes);
 app.use('/api/ai', aiRoutes);
 
 // Error Handling Middleware

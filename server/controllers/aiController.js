@@ -21,10 +21,10 @@ const chatWithAI = asyncHandler(async (req, res) => {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }, { apiVersion: 'v1' });
 
     const prompt = `
-        Bạn là một trợ lý ảo thông minh của ứng dụng quản lý sinh viên LHU Pro. 
-        Hãy trả lời câu hỏi của sinh viên một cách thân thiện, chuyên nghiệp và ngắn gọn.
+        Bạn là một chuyên gia thực vật học và trợ lý ảo thông minh của ứng dụng cây cảnh GreenSpace. 
+        Hãy trả lời câu hỏi của người dùng về cách trồng, chăm sóc và chữa bệnh cho cây một cách thân thiện, chuyên nghiệp và ngắn gọn.
         Ngữ cảnh hiện tại: ${JSON.stringify(context || {})}
-        Câu hỏi của sinh viên: ${message}
+        Câu hỏi của người dùng: ${message}
     `;
     console.log("AI Chat Request:", message);
     try {

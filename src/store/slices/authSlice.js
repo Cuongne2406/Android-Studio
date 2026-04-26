@@ -4,9 +4,9 @@ import apiClient from '../../api/client';
 
 export const loginUser = createAsyncThunk(
   'auth/login',
-  async ({ mssv, password }, { rejectWithValue }) => {
+  async ({ email, password }, { rejectWithValue }) => {
     try {
-      const { data } = await apiClient.post('/auth/login', { mssv, password });
+      const { data } = await apiClient.post('/auth/login', { email, password });
       await AsyncStorage.setItem('userToken', data.token);
       return data;
     } catch (error) {
@@ -60,7 +60,7 @@ const authSlice = createSlice({
         state.profileData = {
           ...state.profileData,
           name: action.payload.name,
-          id: action.payload.mssv,
+          email: action.payload.email,
         };
       })
       .addCase(loginUser.rejected, (state, action) => {

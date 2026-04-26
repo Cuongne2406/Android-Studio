@@ -12,26 +12,26 @@ const generateToken = (id) => {
 // @route   POST /api/auth/register
 // @access  Public
 const registerUser = asyncHandler(async (req, res) => {
-    const { name, mssv, password } = req.body;
-    const userExists = await User.findOne({ mssv });
+    const { name, email, password } = req.body;
+    const userExists = await User.findOne({ email });
 
     if (userExists) {
         res.status(400);
-        throw new Error('User already exists');
+        throw new Error('Email đã được sử dụng');
     }
 
-    const user = await User.create({ name, mssv, password });
+    const user = await User.create({ name, email, password });
 
     if (user) {
         res.status(201).json({
             _id: user._id,
             name: user.name,
-            mssv: user.mssv,
+            email: user.email,
             token: generateToken(user._id)
         });
     } else {
         res.status(400);
-        throw new Error('Invalid user data');
+        throw new Error('Dữ liệu không hợp lệ');
     }
 });
 
@@ -39,19 +39,19 @@ const registerUser = asyncHandler(async (req, res) => {
 // @route   POST /api/auth/login
 // @access  Public
 const authUser = asyncHandler(async (req, res) => {
-    const { mssv, password } = req.body;
-    const user = await User.findOne({ mssv });
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
 
     if (user && (await user.matchPassword(password))) {
         res.json({
             _id: user._id,
             name: user.name,
-            mssv: user.mssv,
+            email: user.email,
             token: generateToken(user._id)
         });
     } else {
         res.status(401);
-        throw new Error('Invalid mssv or password');
+        throw new Error('Email hoặc mật khẩu không đúng');
     }
 });
 

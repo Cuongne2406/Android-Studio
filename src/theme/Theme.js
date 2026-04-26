@@ -1,31 +1,55 @@
 export const Colors = {
-  primary: '#6366F1', // Indigo Neon
-  secondary: '#EC4899', // Pink Neon
+  primary: '#4A7C59', // Sage Green
+  secondary: '#C87941', // Terracotta
   success: '#10B981', // Emerald
   warning: '#F59E0B', // Amber
-  danger: '#EF4444', // Rose/Red
+  danger: '#EF4444', // Rose
   info: '#3B82F6', // Sky Blue
-  accent: '#8B5CF6', // Violet
+  accent: '#D2B48C', // Tan
   light: {
-    background: '#F1F5F9', // Light Slate
-    card: 'rgba(255, 255, 255, 0.8)',
-    text: '#1E293B', // Deep Slate
-    subText: '#64748B', // Slate
-    border: 'rgba(226, 232, 240, 0.8)',
+    background: '#F9F6F0', // Warm Ivory
+    card: '#FFFFFF',
+    text: '#2D3A3A', // Dark Pine/Slate
+    subText: '#6C7A7A', // Muted Pine
+    border: '#E8E4DB', // Beige border
     input: '#FFFFFF',
-    divider: '#E2E8F0'
+    divider: '#E8E4DB',
+    glass: 'rgba(255, 255, 255, 0.7)',
   },
   dark: {
-    background: '#0F172A', // Deep Navy
-    card: 'rgba(30, 41, 59, 0.7)', // Translucent Slate
-    text: '#F8FAFC', // Ghost White
-    subText: '#94A3B8', // Muted Slate
-    border: 'rgba(255, 255, 255, 0.08)',
-    input: '#1E293B',
-    divider: 'rgba(255, 255, 255, 0.05)'
+    background: '#1A2421', // Very Dark Pine
+    card: '#24302C', // Dark Card
+    text: '#F0EBE1', // Off-white
+    subText: '#9CA3AF',
+    border: '#2C3A35',
+    input: '#1F2926',
+    divider: '#2C3A35',
+    glass: 'rgba(36, 48, 44, 0.7)',
+  }
+};
+
+export const Shadows = {
+  small: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  glass: 'rgba(255, 255, 255, 0.2)',
-  glassDark: 'rgba(15, 23, 42, 0.5)'
+  medium: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  large: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 10,
+  }
 };
 
 export const Spacing = {
@@ -33,23 +57,27 @@ export const Spacing = {
   s: 8,
   m: 16,
   l: 24,
-  xl: 32
+  xl: 32,
+  xxl: 48
 };
 
 export const Typography = {
   header: {
-    fontSize: 24,
-    fontWeight: 'bold'
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: 0.5
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600'
+    fontSize: 20,
+    fontWeight: '600',
+    letterSpacing: 0.25
   },
   body: {
-    fontSize: 16
+    fontSize: 16,
+    lineHeight: 24
   },
   caption: {
-    fontSize: 12,
-    color: '#999'
+    fontSize: 14,
+    color: '#888'
   }
 };
