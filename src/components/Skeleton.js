@@ -34,7 +34,7 @@ const Skeleton = ({ width, height, borderRadius = 8, style }) => {
 
 const styles = StyleSheet.create({
   skeleton: {
-    backgroundColor: '#E1E9EE',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
 });
 
