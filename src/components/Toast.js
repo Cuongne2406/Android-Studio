@@ -1,4 +1,4 @@
-import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, forwardRef, useImperativeHandle } from 'react';
 import { Animated, Text, StyleSheet, Dimensions } from 'react-native';
 import { Colors } from '../theme/Theme';
 
@@ -49,6 +49,8 @@ const Toast = forwardRef((props, ref) => {
     </Animated.View>
   );
 });
+
+Toast.displayName = 'Toast';
 
 const styles = StyleSheet.create({
   container: {

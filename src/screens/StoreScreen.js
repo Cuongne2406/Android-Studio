@@ -1,5 +1,5 @@
-import React, { useEffect, useContext, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, Dimensions } from 'react-native';
+import React, { useEffect, useContext, useRef, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, Dimensions, Platform } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchPlants } from '../store/slices/plantSlice';
 import { Colors, Typography, Spacing, Shadows } from '../theme/Theme';
@@ -9,16 +9,49 @@ import { CartContext } from '../context/CartContext';
 import { LinearGradient } from 'expo-linear-gradient';
 import Toast from '../components/Toast';
 import * as Haptics from 'expo-haptics';
+import { fetchWeather } from '../services/WeatherService';
 
 const { width } = Dimensions.get('window');
+
+const WeatherWidget = ({ theme }) => {
+    const [weather, setWeather] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        fetchWeather('Hanoi').then(data => {
+            setWeather(data);
+            setLoading(false);
+        }).catch(() => setLoading(false));
+    }, []);
+
+    if (loading) return null;
+
+    return (
+        <View style={[styles.weatherCard, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
+            {weather ? (
+                <View style={styles.weatherInfo}>
+                    <Image source={{ uri: `https:${weather.current.condition.icon}` }} style={styles.weatherIcon} />
+                    <View>
+                        <Text style={styles.weatherTemp}>{weather.current.temp_c}°C</Text>
+                        <Text style={styles.weatherCity}>{weather.location.name}</Text>
+                    </View>
+                </View>
+            ) : (
+                <Text style={styles.weatherError}>Weather unavailable</Text>
+            )}
+        </View>
+    );
+};
+
+import WebLayout from '../components/WebLayout';
 
 export default function StoreScreen({ navigation }) {
     const dispatch = useDispatch();
     const toastRef = useRef(null);
     const { data: plants, loading } = useSelector((state) => state.plants);
-    const { isDarkMode } = useSelector((state) => state.ui);
+    const isDarkMode = true; // Force VIP Dark Theme
     const { cart, addToCart } = useContext(CartContext);
-    const theme = isDarkMode ? Colors.dark : Colors.light;
+    const theme = Colors.dark; 
 
     const cartCount = cart.reduce((total, item) => total + item.qty, 0);
 
@@ -29,13 +62,14 @@ export default function StoreScreen({ navigation }) {
     const handleAddToCart = (plant) => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         addToCart(plant);
-        toastRef.current?.show(`Đã thêm ${plant.name} vào giỏ hàng`);
+        toastRef.current?.show(`Acquired ${plant.name} asset`);
     };
 
     const renderPlantItem = ({ item, index }) => (
         <Animated.View 
             entering={FadeInUp.delay(index * 100).springify()}
             layout={Layout.springify()}
+            style={Platform.OS === 'web' && { width: '31%', minWidth: 300, marginBottom: 20 }}
         >
             <TouchableOpacity 
                 activeOpacity={0.9}
@@ -45,26 +79,26 @@ export default function StoreScreen({ navigation }) {
                 <View style={styles.imageContainer}>
                     <Image source={{ uri: item.imageUrl }} style={styles.plantImage} resizeMode="cover" />
                     <LinearGradient
-                        colors={['transparent', 'rgba(0,0,0,0.1)']}
+                        colors={['transparent', 'rgba(0,0,0,0.2)']}
                         style={StyleSheet.absoluteFill}
                     />
                 </View>
                 <View style={styles.cardContent}>
                     <View>
                         <Text style={[styles.plantName, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
-                        <View style={styles.categoryBadge}>
-                            <Text style={[styles.plantCategory, { color: Colors.primary }]}>{item.category}</Text>
+                        <View style={[styles.categoryBadge, { backgroundColor: Colors.primary + '20' }]}>
+                            <Text style={[styles.plantCategory, { color: Colors.primary }]}>{item.category || 'Neural Core'}</Text>
                         </View>
                     </View>
                     <View style={styles.priceRow}>
                         <Text style={[styles.plantPrice, { color: theme.text }]}>
-                            {item.price.toLocaleString()} VNĐ
+                            {item.price.toLocaleString()} Cr
                         </Text>
                         <TouchableOpacity 
                             style={[styles.iconButton, { backgroundColor: Colors.primary }]}
                             onPress={() => handleAddToCart(item)}
                         >
-                            <Ionicons name="add" size={24} color="#fff" />
+                            <Ionicons name="download-outline" size={20} color="#fff" />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -80,22 +114,24 @@ export default function StoreScreen({ navigation }) {
         );
     }
 
-    return (
+    const content = (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
             <Toast ref={toastRef} />
             
             <View style={styles.heroContainer}>
                 <LinearGradient
-                    colors={[Colors.primary, '#3A6347']}
+                    colors={[Colors.primary, Colors.secondary]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
                     style={styles.header}
                 >
                     <View style={styles.headerTop}>
                         <View>
-                            <Text style={styles.headerTitle}>GreenSpace</Text>
-                            <Text style={styles.headerSubtitle}>Tìm mảng xanh cho bạn</Text>
+                            <Text style={styles.headerTitle}>Neural Marketplace</Text>
+                            <Text style={styles.headerSubtitle}>Acquire neural enhancements</Text>
                         </View>
                         <TouchableOpacity onPress={() => navigation.navigate('Cart')} style={styles.cartBtn}>
-                            <Ionicons name="basket-outline" size={28} color="#fff" />
+                            <Ionicons name="cube-outline" size={28} color="#fff" />
                             {cartCount > 0 && (
                                 <View style={styles.badge}>
                                     <Text style={styles.badgeText}>{cartCount}</Text>
@@ -103,6 +139,8 @@ export default function StoreScreen({ navigation }) {
                             )}
                         </TouchableOpacity>
                     </View>
+                    
+                    <WeatherWidget theme={theme} />
                 </LinearGradient>
                 <View style={[styles.headerCurve, { backgroundColor: theme.background }]} />
             </View>
@@ -111,12 +149,21 @@ export default function StoreScreen({ navigation }) {
                 data={plants}
                 keyExtractor={(item) => item._id}
                 renderItem={renderPlantItem}
+                numColumns={Platform.OS === 'web' ? 3 : 1}
+                key={Platform.OS === 'web' ? 'grid' : 'list'}
                 contentContainerStyle={styles.listContainer}
+                columnWrapperStyle={Platform.OS === 'web' && { gap: 20 }}
                 showsVerticalScrollIndicator={false}
-                ListHeaderComponent={() => <View style={{ height: 25 }} />}
+                ListHeaderComponent={() => <View style={{ height: 10 }} />}
             />
         </View>
     );
+
+    return Platform.OS === 'web' ? (
+        <WebLayout navigation={navigation} activeRoute="Market">
+            {content}
+        </WebLayout>
+    ) : content;
 }
 
 const styles = StyleSheet.create({
@@ -130,7 +177,7 @@ const styles = StyleSheet.create({
     },
     heroContainer: {
         position: 'relative',
-        backgroundColor: Colors.primary,
+        backgroundColor: '#050508',
     },
     header: {
         paddingTop: 60,
@@ -244,5 +291,35 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 10,
         fontWeight: 'bold',
+    },
+    weatherCard: {
+        marginTop: 20,
+        borderRadius: 16,
+        padding: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    weatherInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    weatherIcon: {
+        width: 40,
+        height: 40,
+        marginRight: 10,
+    },
+    weatherTemp: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+    weatherCity: {
+        color: 'rgba(255,255,255,0.8)',
+        fontSize: 12,
+    },
+    weatherError: {
+        color: '#fff',
+        fontSize: 12,
+        fontStyle: 'italic',
     }
 });

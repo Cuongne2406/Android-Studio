@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, Image } from 'react-native';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import axios from 'axios';
 import { setToken } from '../store/slices/authSlice';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Colors, Typography, Spacing } from '../theme/Theme';
 import { Ionicons } from '@expo/vector-icons';
 import { API_URL } from '../config/api';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function LoginScreen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -16,6 +17,8 @@ export default function LoginScreen() {
   const [error, setError] = useState('');
   
   const dispatch = useDispatch();
+  const theme = Colors.dark; // Force dark theme for VIP login experience
+  const isDarkMode = true;
 
   const handleAuth = async () => {
     try {
@@ -27,37 +30,47 @@ export default function LoginScreen() {
       await AsyncStorage.setItem('userToken', token);
       dispatch(setToken(token));
     } catch (err) {
-      setError(err.response?.data?.message || 'Có lỗi xảy ra, vui lòng thử lại');
+      setError(err.response?.data?.message || 'Authentication failed. Please try again.');
     }
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.container}>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={[styles.container, { backgroundColor: theme.background }]}>
+      <LinearGradient
+        colors={[Colors.primary + '20', 'transparent']}
+        style={StyleSheet.absoluteFill}
+      />
+      
       <View style={styles.content}>
         <View style={styles.logoContainer}>
-            <Ionicons name="leaf" size={80} color={Colors.primary} />
-            <Text style={styles.appName}>GreenSpace</Text>
-            <Text style={styles.appSlogan}>Mang thiên nhiên vào ngôi nhà của bạn</Text>
+            <LinearGradient
+                colors={[Colors.primary, Colors.secondary]}
+                style={styles.logoIcon}
+            >
+                <Ionicons name="sparkles" size={40} color="#fff" />
+            </LinearGradient>
+            <Text style={[styles.appName, { color: theme.text }]}>Zenith AI Gateway</Text>
+            <Text style={[styles.appSlogan, { color: theme.subText }]}>Neural Command Center Interface</Text>
         </View>
 
-        <View style={styles.formContainer}>
-          <Text style={styles.title}>{isLogin ? 'Đăng nhập' : 'Tạo tài khoản'}</Text>
+        <View style={[styles.formContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
+          <Text style={[styles.title, { color: theme.text }]}>{isLogin ? 'SYSTEM ACCESS' : 'NODE INITIALIZATION'}</Text>
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
           {!isLogin && (
             <TextInput
-              style={styles.input}
-              placeholder="Tên của bạn"
-              placeholderTextColor="#999"
+              style={[styles.input, { backgroundColor: theme.input, color: theme.text, borderColor: theme.border }]}
+              placeholder="Commander Name"
+              placeholderTextColor={theme.subText}
               value={name}
               onChangeText={setName}
             />
           )}
           
           <TextInput
-            style={styles.input}
-            placeholder="Email"
-            placeholderTextColor="#999"
+            style={[styles.input, { backgroundColor: theme.input, color: theme.text, borderColor: theme.border }]}
+            placeholder="Email Address"
+            placeholderTextColor={theme.subText}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -65,21 +78,28 @@ export default function LoginScreen() {
           />
           
           <TextInput
-            style={styles.input}
-            placeholder="Mật khẩu"
-            placeholderTextColor="#999"
+            style={[styles.input, { backgroundColor: theme.input, color: theme.text, borderColor: theme.border }]}
+            placeholder="Security Code"
+            placeholderTextColor={theme.subText}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
           />
 
-          <TouchableOpacity style={styles.button} onPress={handleAuth}>
-            <Text style={styles.buttonText}>{isLogin ? 'Bắt đầu ngay' : 'Đăng ký'}</Text>
+          <TouchableOpacity onPress={handleAuth}>
+            <LinearGradient
+                colors={[Colors.primary, Colors.secondary]}
+                style={styles.button}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+            >
+                <Text style={styles.buttonText}>{isLogin ? 'Authenticate' : 'Initialize'}</Text>
+            </LinearGradient>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => setIsLogin(!isLogin)} style={styles.switchButton}>
-            <Text style={styles.switchText}>
-              {isLogin ? 'Chưa có tài khoản? Đăng ký' : 'Đã có tài khoản? Đăng nhập'}
+            <Text style={[styles.switchText, { color: Colors.primary }]}>
+              {isLogin ? "Don't have an account? Sign up" : 'Already registered? Log in'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -91,7 +111,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.light.background,
   },
   content: {
     flex: 1,
@@ -100,49 +119,54 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 50,
+    marginBottom: 40,
+  },
+  logoIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 15,
   },
   appName: {
     ...Typography.header,
-    fontSize: 32,
-    color: Colors.primary,
-    marginTop: 10,
+    fontSize: 36,
+    letterSpacing: 1,
   },
   appSlogan: {
     ...Typography.body,
-    color: Colors.light.subText,
     marginTop: 5,
+    opacity: 0.8,
   },
   formContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255,255,255,0.03)',
     padding: Spacing.xl,
-    borderRadius: 24,
+    borderRadius: 32,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.1)',
+    elevation: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 15,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 20,
   },
   title: {
     ...Typography.title,
     fontSize: 24,
     marginBottom: Spacing.l,
     textAlign: 'center',
-    color: Colors.light.text,
   },
   input: {
-    backgroundColor: '#F9F6F0',
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 15,
     marginBottom: Spacing.m,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#E8E4DB',
   },
   button: {
-    backgroundColor: Colors.primary,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     alignItems: 'center',
     marginTop: Spacing.m,
   },
@@ -150,14 +174,14 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+    letterSpacing: 1,
   },
   switchButton: {
     marginTop: Spacing.l,
     alignItems: 'center',
   },
   switchText: {
-    color: Colors.secondary,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600'
   },
   errorText: {

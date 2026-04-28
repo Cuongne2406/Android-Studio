@@ -1,30 +1,30 @@
 export const Colors = {
-  primary: '#4A7C59', // Sage Green
-  secondary: '#C87941', // Terracotta
-  success: '#10B981', // Emerald
-  warning: '#F59E0B', // Amber
-  danger: '#EF4444', // Rose
-  info: '#3B82F6', // Sky Blue
-  accent: '#D2B48C', // Tan
+  primary: '#00F5FF', // Neon Cyan
+  secondary: '#9D00FF', // Electric Purple
+  success: '#00FF94', // Cyber Green
+  warning: '#FFD700', // Gold
+  danger: '#FF0055', // Cyber Red
+  info: '#00A3FF',
+  accent: '#FF00E5', // Neon Pink
   light: {
-    background: '#F9F6F0', // Warm Ivory
+    background: '#F0F2F5',
     card: '#FFFFFF',
-    text: '#2D3A3A', // Dark Pine/Slate
-    subText: '#6C7A7A', // Muted Pine
-    border: '#E8E4DB', // Beige border
-    input: '#FFFFFF',
-    divider: '#E8E4DB',
-    glass: 'rgba(255, 255, 255, 0.7)',
+    text: '#050505',
+    subText: '#65676B',
+    border: '#CED0D4',
+    input: '#F0F2F5',
+    divider: '#E4E6EB',
+    glass: 'rgba(255, 255, 255, 0.8)',
   },
   dark: {
-    background: '#1A2421', // Very Dark Pine
-    card: '#24302C', // Dark Card
-    text: '#F0EBE1', // Off-white
-    subText: '#9CA3AF',
-    border: '#2C3A35',
-    input: '#1F2926',
-    divider: '#2C3A35',
-    glass: 'rgba(36, 48, 44, 0.7)',
+    background: '#050508', // Deep Space Black
+    card: '#0F111A', // Dark Tech Blue
+    text: '#E4E6EB',
+    subText: '#B0B3B8',
+    border: '#242526',
+    input: '#242526',
+    divider: '#3E4042',
+    glass: 'rgba(15, 17, 26, 0.8)',
   }
 };
 

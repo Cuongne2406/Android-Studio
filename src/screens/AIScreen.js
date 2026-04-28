@@ -6,16 +6,18 @@ import { Colors, Typography, Spacing } from '../theme/Theme';
 import { Ionicons } from '@expo/vector-icons';
 import { API_URL } from '../config/api';
 
-export default function AIScreen() {
+import WebLayout from '../components/WebLayout';
+
+export default function AIScreen({ navigation }) {
   const [messages, setMessages] = useState([
-    { id: '1', text: 'Chào bạn! Mình là chuyên gia cây cảnh GreenSpace. Bạn cần tư vấn về loài cây nào hay cách chăm sóc cây ra sao?', isBot: true }
+    { id: '1', text: 'Greeting, Operator. I am Lumina AI. Neural pathways are stable. How can I assist with your command today?', isBot: true }
   ]);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
   const flatListRef = useRef();
   
-  const { isDarkMode } = useSelector(state => state.ui);
-  const theme = isDarkMode ? Colors.dark : Colors.light;
+  const theme = Colors.dark; 
+  const isDarkMode = true;
 
   const sendMessage = async () => {
     if (!inputText.trim()) return;
@@ -43,11 +45,11 @@ export default function AIScreen() {
     </View>
   );
 
-  return (
+  const content = (
     <KeyboardAvoidingView style={[styles.container, { backgroundColor: theme.background }]} behavior={Platform.OS === 'ios' ? 'padding' : null}>
       <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
-        <Ionicons name="leaf" size={24} color={Colors.primary} />
-        <Text style={[styles.headerTitle, { color: theme.text }]}> Chuyên Gia Cây Cảnh</Text>
+        <Ionicons name="sparkles-outline" size={24} color={Colors.primary} />
+        <Text style={[styles.headerTitle, { color: theme.text }]}> Lumina AI Core</Text>
       </View>
 
       <FlatList
@@ -56,7 +58,7 @@ export default function AIScreen() {
         keyExtractor={item => item.id}
         renderItem={renderMessage}
         contentContainerStyle={styles.chatContainer}
-        onContentSizeChange={() => flatListRef.current.scrollToEnd({ animated: true })}
+        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
       />
 
       <View style={[styles.inputContainer, { backgroundColor: theme.card, borderTopColor: theme.border }]}>
@@ -64,7 +66,7 @@ export default function AIScreen() {
           style={[styles.input, { color: theme.text, backgroundColor: theme.input, borderColor: theme.border }]}
           value={inputText}
           onChangeText={setInputText}
-          placeholder="Hỏi cách chăm sóc cây..."
+          placeholder="Enter system command..."
           placeholderTextColor={theme.subText}
           multiline
         />
@@ -74,6 +76,12 @@ export default function AIScreen() {
       </View>
     </KeyboardAvoidingView>
   );
+
+  return Platform.OS === 'web' ? (
+    <WebLayout navigation={navigation} activeRoute="Lumina AI">
+        {content}
+    </WebLayout>
+  ) : content;
 }
 
 const styles = StyleSheet.create({

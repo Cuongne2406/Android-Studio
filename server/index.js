@@ -4,6 +4,11 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const http = require('http');
 const { Server } = require('socket.io');
+const dns = require('dns');
+
+// Fix for MongoDB Atlas SRV connection issues
+dns.setServers(['8.8.8.8', '1.1.1.1']);
+
 
 const authRoutes = require('./routes/authRoutes');
 const plantRoutes = require('./routes/plantRoutes');

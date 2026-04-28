@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Alert, TextInput, RefreshControl, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, Alert, TextInput, RefreshControl, Platform, useWindowDimensions } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchGarden, removePlant, setRefreshing, optimisticRemove, updatePlant } from '../store/slices/gardenSlice';
 import { Colors, Typography, Spacing, Shadows } from '../theme/Theme';
@@ -8,14 +8,28 @@ import Animated, { FadeInRight, FadeOutLeft, Layout } from 'react-native-reanima
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
+import { TabView, SceneMap, TabBar } from 'react-native-tab-view';
+import { Menu, Divider, Provider as PaperProvider } from 'react-native-paper';
+
+import WebLayout from '../components/WebLayout';
 
 export default function GardenScreen({ navigation }) {
+    const layout = useWindowDimensions();
     const dispatch = useDispatch();
     const { data: garden, loading, refreshing } = useSelector((state) => state.garden);
-    const { isDarkMode } = useSelector((state) => state.ui);
-    const theme = isDarkMode ? Colors.dark : Colors.light;
+    const isDarkMode = true; // Force true for VIP experience
+    const theme = Colors.dark; 
+
+    const [index, setIndex] = useState(0);
+    const [routes] = useState([
+        { key: 'active', title: 'Active Nodes' },
+        { key: 'history', title: 'Logs' },
+    ]);
 
     const [searchQuery, setSearchQuery] = useState('');
+    const [menuVisible, setMenuVisible] = useState(false);
+    const [selectedItem, setSelectedItem] = useState(null);
+    const [menuAnchor, setMenuAnchor] = useState({ x: 0, y: 0 });
 
     useEffect(() => {
         dispatch(fetchGarden());
@@ -27,190 +41,194 @@ export default function GardenScreen({ navigation }) {
     };
 
     const handleDelete = (id) => {
-        if (Platform.OS !== 'web') {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        }
-
         const deleteAction = () => {
             dispatch(optimisticRemove(id));
             dispatch(removePlant(id));
-            if (Platform.OS !== 'web') {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            }
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         };
 
-        if (Platform.OS === 'web') {
-            if (window.confirm("Bạn có chắc muốn xóa cây này khỏi khu vườn?")) {
-                deleteAction();
-            }
-        } else {
-            Alert.alert("Xóa cây", "Bạn có chắc muốn xóa cây này khỏi khu vườn?", [
-                { text: "Hủy", style: "cancel" },
-                { text: "Xóa", style: "destructive", onPress: deleteAction }
-            ]);
-        }
+        Alert.alert("Eject Node", "Are you sure you want to remove this node from the command center?", [
+            { text: "Cancel", style: "cancel" },
+            { text: "Eject", style: "destructive", onPress: deleteAction }
+        ]);
     };
 
-    const toggleWaterStatus = (item) => {
-        const newStatus = item.waterStatus === 'Đã tưới' ? 'Cần tưới' : 'Đã tưới';
+    const toggleStatus = (item) => {
+        const newStatus = item.waterStatus === 'Stable' ? 'Critical' : 'Stable';
         dispatch(updatePlant({ id: item._id, data: { ...item, waterStatus: newStatus } }));
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     };
 
     const filteredGarden = useMemo(() => {
         return garden.filter(item => 
-            item.plantName.toLowerCase().includes(searchQuery.toLowerCase())
+            (item.plantName || item.name || '').toLowerCase().includes(searchQuery.toLowerCase())
         );
     }, [garden, searchQuery]);
 
-    const renderGardenItem = ({ item, index }) => (
+    const onLongPress = (event, item) => {
+        const { nativeEvent } = event;
+        setSelectedItem(item);
+        setMenuAnchor({ x: nativeEvent.pageX, y: nativeEvent.pageY });
+        setMenuVisible(true);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    };
+
+    const renderGardenItem = ({ item, index: i }) => (
         <Animated.View 
-            entering={FadeInRight.delay(index * 100).duration(500)} 
+            entering={FadeInRight.delay(i * 100).duration(500)} 
             exiting={FadeOutLeft}
             layout={Layout.springify()}
+            style={Platform.OS === 'web' && { width: '30%', minWidth: 280 }}
         >
             <TouchableOpacity 
                 activeOpacity={0.9}
                 onPress={() => navigation.navigate('AddEditPlant', { plant: item })}
+                onLongPress={(e) => onLongPress(e, item)}
                 style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
             >
-                <LinearGradient
-                    colors={[Colors.primary + '20', 'transparent']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.cardGradient}
-                />
-                
                 <View style={styles.imageContainer}>
                     <Image source={{ uri: item.imageUrl }} style={styles.image} />
-                    {item.waterStatus === 'Đã tưới' && (
+                    {item.waterStatus === 'Stable' && (
                         <View style={styles.checkBadge}>
-                            <Ionicons name="checkmark-circle" size={20} color={Colors.success} />
+                            <Ionicons name="shield-checkmark" size={20} color={Colors.primary} />
                         </View>
                     )}
                 </View>
 
                 <View style={styles.cardContent}>
-                    <Text style={[styles.plantName, { color: theme.text }]} numberOfLines={1}>{item.plantName}</Text>
+                    <Text style={[styles.plantName, { color: theme.text }]} numberOfLines={1}>{item.plantName || item.name}</Text>
                     <Text style={[styles.notes, { color: theme.subText }]} numberOfLines={2}>
-                        {item.notes || 'Thêm ghi chú chăm sóc...'}
+                        {item.notes || 'No telemetry data...'}
                     </Text>
                     
                     <View style={styles.statusRow}>
-                        <TouchableOpacity 
-                            onPress={() => toggleWaterStatus(item)}
-                            style={[
+                        <View style={[
                                 styles.statusBadge, 
-                                { backgroundColor: item.waterStatus === 'Đã tưới' ? Colors.success + '15' : Colors.warning + '15' }
+                                { backgroundColor: item.waterStatus === 'Stable' ? Colors.success + '15' : Colors.danger + '15' }
                             ]}
                         >
-                            <Ionicons 
-                                name={item.waterStatus === 'Đã tưới' ? "water" : "water-outline"} 
-                                size={14} 
-                                color={item.waterStatus === 'Đã tưới' ? Colors.success : Colors.warning} 
-                            />
+                            <View style={[styles.pulse, { backgroundColor: item.waterStatus === 'Stable' ? Colors.success : Colors.danger }]} />
                             <Text style={[
                                 styles.statusText, 
-                                { color: item.waterStatus === 'Đã tưới' ? Colors.success : Colors.warning }
+                                { color: item.waterStatus === 'Stable' ? Colors.success : Colors.danger }
                             ]}>
-                                {item.waterStatus}
+                                {item.waterStatus === 'Stable' ? 'STABLE' : 'CRITICAL'}
                             </Text>
-                        </TouchableOpacity>
+                        </View>
                     </View>
-                </View>
-                
-                <View style={styles.actionColumn}>
-                    <TouchableOpacity 
-                        onPress={() => handleDelete(item._id)} 
-                        style={[styles.deleteBtn, { backgroundColor: Colors.danger + '10' }]}
-                    >
-                        <Ionicons name="trash-outline" size={18} color={Colors.danger} />
-                    </TouchableOpacity>
                 </View>
             </TouchableOpacity>
         </Animated.View>
     );
 
-    return (
-        <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <LinearGradient
-                colors={[Colors.primary + '15', 'transparent']}
-                style={StyleSheet.absoluteFill}
-            />
-
-            <View style={styles.header}>
-                <View>
-                    <Text style={[styles.headerTitle, { color: theme.text }]}>Khu Vườn</Text>
-                    <Text style={[styles.headerSubtitle, { color: theme.subText }]}>{garden.length} người bạn xanh của bạn</Text>
+    const ActiveRoute = () => (
+        <FlatList
+            data={filteredGarden}
+            keyExtractor={(item) => item._id}
+            renderItem={renderGardenItem}
+            numColumns={Platform.OS === 'web' ? 3 : 1}
+            key={Platform.OS === 'web' ? 'grid' : 'list'}
+            contentContainerStyle={styles.listContainer}
+            columnWrapperStyle={Platform.OS === 'web' && { gap: 20 }}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
+            }
+            ListEmptyComponent={() => (
+                <View style={styles.emptyContainer}>
+                    <Ionicons name="pulse-outline" size={80} color={Colors.primary + '40'} />
+                    <Text style={[styles.emptyText, { color: theme.text }]}>No modules active</Text>
+                    <TouchableOpacity 
+                        style={[styles.addFirstBtn, { backgroundColor: Colors.primary }]}
+                        onPress={() => navigation.navigate('AddEditPlant')}
+                    >
+                        <Text style={styles.addFirstBtnText}>Initialize Node</Text>
+                    </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={[styles.profileIcon, { backgroundColor: theme.card }]}>
-                    <Ionicons name="leaf" size={24} color={Colors.primary} />
-                </TouchableOpacity>
-            </View>
+            )}
+        />
+    );
 
-            <View style={styles.searchSection}>
-                <BlurView intensity={isDarkMode ? 20 : 40} style={[styles.searchBar, { backgroundColor: theme.glass }]}>
-                    <Ionicons name="search-outline" size={20} color={theme.subText} style={styles.searchIcon} />
-                    <TextInput
-                        placeholder="Tìm kiếm cây của bạn..."
-                        placeholderTextColor={theme.subText}
-                        style={[styles.searchInput, { color: theme.text }]}
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
-                    {searchQuery.length > 0 && (
-                        <TouchableOpacity onPress={() => setSearchQuery('')}>
-                            <Ionicons name="close-circle" size={18} color={theme.subText} />
-                        </TouchableOpacity>
-                    )}
-                </BlurView>
-            </View>
+    const HistoryRoute = () => (
+        <View style={styles.center}>
+            <Ionicons name="time-outline" size={60} color={theme.subText} />
+            <Text style={{ color: theme.subText, marginTop: 10 }}>Logs are empty</Text>
+        </View>
+    );
 
-            <FlatList
-                data={filteredGarden}
-                keyExtractor={(item) => item._id}
-                renderItem={renderGardenItem}
-                contentContainerStyle={styles.listContainer}
-                showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />
-                }
-                ListEmptyComponent={() => (
-                    <Animated.View entering={FadeInRight} style={styles.emptyContainer}>
-                        <View style={styles.emptyIconCircle}>
-                            <Ionicons name="flower-outline" size={80} color={Colors.primary + '40'} />
-                        </View>
-                        <Text style={[styles.emptyText, { color: theme.text }]}>Trống trơn...</Text>
-                        <Text style={[styles.emptySubText, { color: theme.subText }]}>Hãy thêm những mầm xanh đầu tiên!</Text>
-                        <TouchableOpacity 
-                            style={[styles.addFirstBtn, { backgroundColor: Colors.primary }]}
-                            onPress={() => navigation.navigate('AddEditPlant')}
-                        >
-                            <Text style={styles.addFirstBtnText}>Thêm Cây Ngay</Text>
-                        </TouchableOpacity>
-                    </Animated.View>
-                )}
-            />
+    const renderScene = SceneMap({
+        active: ActiveRoute,
+        history: HistoryRoute,
+    });
 
-            <Animated.View entering={FadeInRight.delay(500)} style={styles.fabContainer}>
+    const renderTabBar = props => (
+        <TabBar
+            {...props}
+            indicatorStyle={{ backgroundColor: Colors.primary }}
+            style={{ backgroundColor: 'transparent', elevation: 0 }}
+            labelStyle={{ fontWeight: 'bold', fontSize: 13 }}
+            activeColor={Colors.primary}
+            inactiveColor={theme.subText}
+        />
+    );
+
+    const content = (
+        <PaperProvider>
+            <View style={[styles.container, { backgroundColor: theme.background }]}>
+                <View style={styles.header}>
+                    <View>
+                        <Text style={[styles.headerTitle, { color: theme.text }]}>Neural Command</Text>
+                        <Text style={[styles.headerSubtitle, { color: theme.subText }]}>{garden.length} nodes under management</Text>
+                    </View>
+                </View>
+
+                <View style={styles.searchSection}>
+                    <View style={[styles.searchBar, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                        <Ionicons name="search-outline" size={20} color={theme.subText} style={styles.searchIcon} />
+                        <TextInput
+                            placeholder="Scan for active nodes..."
+                            placeholderTextColor={theme.subText}
+                            style={[styles.searchInput, { color: theme.text }]}
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                        />
+                    </View>
+                </View>
+
+                <TabView
+                    navigationState={{ index, routes }}
+                    renderScene={renderScene}
+                    renderTabBar={renderTabBar}
+                    onIndexChange={setIndex}
+                    initialLayout={{ width: layout.width }}
+                />
+
+                <Menu
+                    visible={menuVisible}
+                    onDismiss={() => setMenuVisible(false)}
+                    anchor={menuAnchor}
+                >
+                    <Menu.Item onPress={() => { toggleStatus(selectedItem); setMenuVisible(false); }} title="Toggle Stability" />
+                    <Divider />
+                    <Menu.Item onPress={() => { handleDelete(selectedItem?._id); setMenuVisible(false); }} title="Eject Module" titleStyle={{ color: Colors.danger }} />
+                </Menu>
+
                 <TouchableOpacity 
                     activeOpacity={0.8}
                     style={[styles.fab, Shadows.medium, { backgroundColor: Colors.primary }]}
-                    onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        navigation.navigate('AddEditPlant');
-                    }}
+                    onPress={() => navigation.navigate('AddEditPlant')}
                 >
-                    <LinearGradient
-                        colors={[Colors.primary, '#3A6347']}
-                        style={styles.fabGradient}
-                    >
-                        <Ionicons name="add" size={32} color="#fff" />
-                    </LinearGradient>
+                    <Ionicons name="hardware-chip-outline" size={32} color="#fff" />
                 </TouchableOpacity>
-            </Animated.View>
-        </View>
+            </View>
+        </PaperProvider>
     );
+
+    return Platform.OS === 'web' ? (
+        <WebLayout navigation={navigation} activeRoute="Neural Hub">
+            {content}
+        </WebLayout>
+    ) : content;
 }
 
 const styles = StyleSheet.create({
@@ -266,11 +284,11 @@ const styles = StyleSheet.create({
     image: {
         width: 85, height: 85,
         borderRadius: 20,
-        backgroundColor: '#eee',
+        backgroundColor: 'rgba(255,255,255,0.05)',
     },
     checkBadge: {
         position: 'absolute', top: -5, right: -5,
-        backgroundColor: '#fff', borderRadius: 10,
+        backgroundColor: '#000', borderRadius: 10,
     },
     cardContent: {
         flex: 1,
@@ -299,32 +317,16 @@ const styles = StyleSheet.create({
         position: 'absolute', bottom: 30, right: 30,
     },
     fab: {
-        width: 65, height: 65, borderRadius: 32.5,
-        overflow: 'hidden',
-    },
-    fabGradient: {
-        flex: 1, justifyContent: 'center', alignItems: 'center',
-    },
-    emptyContainer: { 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        marginTop: 60,
-        paddingHorizontal: 40,
-    },
-    emptyIconCircle: {
-        width: 150, height: 150, borderRadius: 75,
-        backgroundColor: Colors.primary + '10',
-        justifyContent: 'center', alignItems: 'center',
-        marginBottom: 20,
-    },
-    emptyText: { ...Typography.title, fontSize: 24, marginBottom: 8 },
-    emptySubText: { ...Typography.body, textAlign: 'center', opacity: 0.6 },
-    addFirstBtn: {
-        marginTop: 30,
-        paddingHorizontal: 30,
-        paddingVertical: 15,
-        borderRadius: 30,
+        position: 'absolute',
+        bottom: 30,
+        right: 30,
+        width: 65,
+        height: 65,
+        borderRadius: 32.5,
+        backgroundColor: Colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
         ...Shadows.medium,
-    },
-    addFirstBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 16 }
+        overflow: 'hidden',
+    }
 });

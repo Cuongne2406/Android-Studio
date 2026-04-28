@@ -1,7 +1,7 @@
 import { io } from 'socket.io-client';
 import { Platform } from 'react-native';
 
-const SOCKET_URL = 'http://192.168.100.241:5000';
+const SOCKET_URL = 'http://192.168.10.35:5000';
 
 class SocketService {
     socket = null;
