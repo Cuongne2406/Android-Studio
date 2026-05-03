@@ -15,6 +15,7 @@ const plantRoutes = require('./routes/plantRoutes');
 const gardenRoutes = require('./routes/gardenRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const aiRoutes = require('./routes/aiRoutes');
+const logRoutes = require('./routes/logRoutes');
 const { notFound, errorHandler } = require('./middleware/errorMiddleware');
 
 dotenv.config();
@@ -56,6 +57,7 @@ app.use('/api/plants', plantRoutes);
 app.use('/api/garden', gardenRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/logs', logRoutes);
 
 // Error Handling Middleware
 app.use(notFound);

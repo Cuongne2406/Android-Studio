@@ -1,5 +1,5 @@
 export const Colors = {
-  primary: '#00F5FF', // Neon Cyan
+  primary: '#00D1FF', // Balanced Cyan
   secondary: '#9D00FF', // Electric Purple
   success: '#00FF94', // Cyber Green
   warning: '#FFD700', // Gold
@@ -7,16 +7,18 @@ export const Colors = {
   info: '#00A3FF',
   accent: '#FF00E5', // Neon Pink
   light: {
-    background: '#F0F2F5',
+    primary: '#0084A3', // Darker Cyan for readability on white
+    background: '#F8F9FA',
     card: '#FFFFFF',
-    text: '#050505',
-    subText: '#65676B',
-    border: '#CED0D4',
-    input: '#F0F2F5',
-    divider: '#E4E6EB',
+    text: '#1A1A1A',
+    subText: '#6C757D',
+    border: '#DEE2E6',
+    input: '#F1F3F5',
+    divider: '#E9ECEF',
     glass: 'rgba(255, 255, 255, 0.8)',
   },
   dark: {
+    primary: '#00F5FF', // Bright Neon Cyan for dark background
     background: '#050508', // Deep Space Black
     card: '#0F111A', // Dark Tech Blue
     text: '#E4E6EB',

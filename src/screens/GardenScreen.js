@@ -17,8 +17,8 @@ export default function GardenScreen({ navigation }) {
     const layout = useWindowDimensions();
     const dispatch = useDispatch();
     const { data: garden, loading, refreshing } = useSelector((state) => state.garden);
-    const isDarkMode = true; // Force true for VIP experience
-    const theme = Colors.dark; 
+    const { isDarkMode } = useSelector((state) => state.ui);
+    const theme = isDarkMode ? Colors.dark : Colors.light; 
 
     const [index, setIndex] = useState(0);
     const [routes] = useState([
@@ -121,6 +121,47 @@ export default function GardenScreen({ navigation }) {
         </Animated.View>
     );
 
+    const [logs, setLogs] = useState([]);
+    const [loadingLogs, setLoadingLogs] = useState(false);
+    const { userToken } = useSelector((state) => state.auth);
+
+    const fetchLogs = async () => {
+        setLoadingLogs(true);
+        try {
+            const axios = require('axios');
+            const { API_URL } = require('../config/api');
+            const { data } = await axios.get(`${API_URL}/logs`, {
+                headers: { Authorization: `Bearer ${userToken}` }
+            });
+            setLogs(data);
+        } catch (e) {
+            console.error('Failed to fetch logs:', e);
+        } finally {
+            setLoadingLogs(false);
+        }
+    };
+
+    useEffect(() => {
+        if (index === 1) { // When switching to Logs tab
+            fetchLogs();
+        }
+    }, [index]);
+
+    const renderLogItem = ({ item }) => (
+        <View style={[styles.logItem, { borderLeftColor: item.action === 'EJECT' ? Colors.danger : Colors.primary }]}>
+            <View style={styles.logHeader}>
+                <Text style={[styles.logAction, { color: item.action === 'EJECT' ? Colors.danger : Colors.primary }]}>
+                    [{item.action}]
+                </Text>
+                <Text style={[styles.logTime, { color: theme.subText }]}>
+                    {new Date(item.timestamp).toLocaleTimeString()}
+                </Text>
+            </View>
+            <Text style={[styles.logTarget, { color: theme.text }]}>{item.targetName}</Text>
+            <Text style={[styles.logDetails, { color: theme.subText }]}>{item.details}</Text>
+        </View>
+    );
+
     const ActiveRoute = () => (
         <FlatList
             data={filteredGarden}
@@ -150,10 +191,21 @@ export default function GardenScreen({ navigation }) {
     );
 
     const HistoryRoute = () => (
-        <View style={styles.center}>
-            <Ionicons name="time-outline" size={60} color={theme.subText} />
-            <Text style={{ color: theme.subText, marginTop: 10 }}>Logs are empty</Text>
-        </View>
+        <FlatList
+            data={logs}
+            keyExtractor={(item) => item._id}
+            renderItem={renderLogItem}
+            contentContainerStyle={styles.listContainer}
+            refreshControl={
+                <RefreshControl refreshing={loadingLogs} onRefresh={fetchLogs} tintColor={Colors.primary} />
+            }
+            ListEmptyComponent={() => (
+                <View style={styles.center}>
+                    <Ionicons name="time-outline" size={60} color={theme.subText} />
+                    <Text style={{ color: theme.subText, marginTop: 10 }}>Logs are empty</Text>
+                </View>
+            )}
+        />
     );
 
     const renderScene = SceneMap({
@@ -224,17 +276,17 @@ export default function GardenScreen({ navigation }) {
         </PaperProvider>
     );
 
-    return Platform.OS === 'web' ? (
+    return (
         <WebLayout navigation={navigation} activeRoute="Neural Hub">
             {content}
         </WebLayout>
-    ) : content;
+    );
 }
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
     header: {
-        paddingTop: 60,
+        paddingTop: Spacing.xl + 10,
         paddingHorizontal: Spacing.l,
         paddingBottom: Spacing.m,
         flexDirection: 'row',
@@ -264,7 +316,11 @@ const styles = StyleSheet.create({
     },
     searchIcon: { marginRight: 10 },
     searchInput: { flex: 1, fontSize: 16 },
-    listContainer: { paddingHorizontal: Spacing.l, paddingBottom: 120 },
+    listContainer: { 
+        paddingHorizontal: Spacing.l, 
+        paddingTop: Spacing.m,
+        paddingBottom: 120 
+    },
     card: {
         flexDirection: 'row',
         borderRadius: 24,
@@ -328,5 +384,33 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         ...Shadows.medium,
         overflow: 'hidden',
+        zIndex: 1000,
+    },
+    logItem: {
+        padding: Spacing.m,
+        borderRadius: 12,
+        backgroundColor: 'rgba(255,255,255,0.03)',
+        marginBottom: Spacing.s,
+        borderLeftWidth: 3,
+    },
+    logHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 4,
+    },
+    logAction: {
+        fontSize: 12,
+        fontWeight: 'bold',
+    },
+    logTime: {
+        fontSize: 11,
+    },
+    logTarget: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 2,
+    },
+    logDetails: {
+        fontSize: 13,
     }
 });

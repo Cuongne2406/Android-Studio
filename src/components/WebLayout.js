@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, useWindowDimensions, TouchableWithoutFeedback, ScrollView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Spacing } from '../theme/Theme';
 import { useDispatch } from 'react-redux';
@@ -33,6 +34,7 @@ const DashboardSkeleton = () => (
 
 const WebLayout = ({ children, navigation, activeRoute }) => {
   const dispatch = useDispatch();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
   const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
@@ -120,7 +122,7 @@ const WebLayout = ({ children, navigation, activeRoute }) => {
       {/* Main Content Area */}
       <View style={styles.mainContent}>
         {isMobile && (
-          <View style={styles.mobileHeader}>
+          <View style={[styles.mobileHeader, { paddingTop: Math.max(insets.top, 20), height: 70 + insets.top }]}>
             <TouchableOpacity onPress={toggleSidebar} style={styles.menuButton}>
               <Ionicons name="menu-outline" size={28} color={Colors.primary} />
             </TouchableOpacity>
@@ -164,7 +166,6 @@ const styles = StyleSheet.create({
     zIndex: 999,
   },
   mobileHeader: {
-    height: 60,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

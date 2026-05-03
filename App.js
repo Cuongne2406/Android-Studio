@@ -118,16 +118,14 @@ const DrawerNavigator = () => {
           drawerLabelStyle: { fontWeight: 'bold', marginLeft: -10 }
         }}
       >
-        {/* On Web, we make WebDashboard the first screen, but keep other screens accessible */}
-        {Platform.OS === 'web' && (
-          <Drawer.Screen 
-            name="Command Center" 
-            component={WebDashboard} 
-            options={{ 
-              drawerIcon: ({ color }) => <Ionicons name="apps-outline" size={22} color={color} />
-            }} 
-          />
-        )}
+        {/* Command Center available on all platforms with responsive design */}
+        <Drawer.Screen 
+          name="Command Center" 
+          component={WebDashboard} 
+          options={{ 
+            drawerIcon: ({ color }) => <Ionicons name="apps-outline" size={22} color={color} />
+          }} 
+        />
         
         <Drawer.Screen 
           name="HomeTabs" 

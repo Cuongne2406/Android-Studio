@@ -49,9 +49,9 @@ export default function StoreScreen({ navigation }) {
     const dispatch = useDispatch();
     const toastRef = useRef(null);
     const { data: plants, loading } = useSelector((state) => state.plants);
-    const isDarkMode = true; // Force VIP Dark Theme
+    const { isDarkMode } = useSelector((state) => state.ui);
     const { cart, addToCart } = useContext(CartContext);
-    const theme = Colors.dark; 
+    const theme = isDarkMode ? Colors.dark : Colors.light; 
 
     const cartCount = cart.reduce((total, item) => total + item.qty, 0);
 
@@ -159,11 +159,11 @@ export default function StoreScreen({ navigation }) {
         </View>
     );
 
-    return Platform.OS === 'web' ? (
+    return (
         <WebLayout navigation={navigation} activeRoute="Market">
             {content}
         </WebLayout>
-    ) : content;
+    );
 }
 
 const styles = StyleSheet.create({

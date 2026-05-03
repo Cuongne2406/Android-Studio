@@ -16,8 +16,8 @@ export default function AIScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const flatListRef = useRef();
   
-  const theme = Colors.dark; 
-  const isDarkMode = true;
+  const { isDarkMode } = useSelector((state) => state.ui);
+  const theme = isDarkMode ? Colors.dark : Colors.light; 
 
   const sendMessage = async () => {
     if (!inputText.trim()) return;
@@ -26,6 +26,9 @@ export default function AIScreen({ navigation }) {
     setMessages(prev => [...prev, newUserMessage]);
     setInputText('');
     setLoading(true);
+    
+    // Immediate scroll after user sends message
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
 
     try {
       const response = await axios.post(`${API_URL}/ai/chat`, { message: newUserMessage.text });
@@ -36,6 +39,8 @@ export default function AIScreen({ navigation }) {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setLoading(false);
+      // Scroll again after bot replies
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 200);
     }
   };
 
@@ -46,7 +51,11 @@ export default function AIScreen({ navigation }) {
   );
 
   const content = (
-    <KeyboardAvoidingView style={[styles.container, { backgroundColor: theme.background }]} behavior={Platform.OS === 'ios' ? 'padding' : null}>
+    <KeyboardAvoidingView 
+      style={[styles.container, { backgroundColor: theme.background }]} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
+    >
       <View style={[styles.header, { backgroundColor: theme.card, borderBottomColor: theme.border }]}>
         <Ionicons name="sparkles-outline" size={24} color={Colors.primary} />
         <Text style={[styles.headerTitle, { color: theme.text }]}> Lumina AI Core</Text>
@@ -59,6 +68,7 @@ export default function AIScreen({ navigation }) {
         renderItem={renderMessage}
         contentContainerStyle={styles.chatContainer}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        onLayout={() => flatListRef.current?.scrollToEnd({ animated: true })}
       />
 
       <View style={[styles.inputContainer, { backgroundColor: theme.card, borderTopColor: theme.border }]}>
@@ -77,18 +87,18 @@ export default function AIScreen({ navigation }) {
     </KeyboardAvoidingView>
   );
 
-  return Platform.OS === 'web' ? (
+  return (
     <WebLayout navigation={navigation} activeRoute="Lumina AI">
         {content}
     </WebLayout>
-  ) : content;
+  );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingTop: 60, paddingBottom: 15,
+    paddingTop: 15, paddingBottom: 15,
     borderBottomWidth: 1,
   },
   headerTitle: { ...Typography.title, fontWeight: 'bold' },
@@ -101,7 +111,7 @@ const styles = StyleSheet.create({
   userBubble: { alignSelf: 'flex-end', borderBottomRightRadius: 5 },
   messageText: { ...Typography.body },
   inputContainer: {
-    flexDirection: 'row', padding: 10, paddingBottom: 20,
+    flexDirection: 'row', padding: 10, paddingBottom: 25,
     borderTopWidth: 1, alignItems: 'center',
   },
   input: {

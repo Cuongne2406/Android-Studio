@@ -11,8 +11,8 @@ import WebLayout from '../components/WebLayout';
 
 export default function ProfileScreen({ navigation }) {
   const dispatch = useDispatch();
-  const theme = Colors.dark; // Force dark theme for VIP Operator experience
-  const isDarkMode = true;
+  const { isDarkMode } = useSelector((state) => state.ui);
+  const theme = isDarkMode ? Colors.dark : Colors.light;
   
   const handleLogout = async () => {
     if (Platform.OS === 'web') {
@@ -110,11 +110,11 @@ export default function ProfileScreen({ navigation }) {
     </ScrollView>
   );
 
-  return Platform.OS === 'web' ? (
+  return (
     <WebLayout navigation={navigation} activeRoute="Operator">
         {content}
     </WebLayout>
-  ) : content;
+  );
 }
 
 const styles = StyleSheet.create({

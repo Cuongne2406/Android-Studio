@@ -17,16 +17,22 @@ const chatWithAI = asyncHandler(async (req, res) => {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    // Sử dụng model gemini-2.5-flash theo danh sách khả dụng từ API Key của bạn
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" }, { apiVersion: 'v1' });
+    // Sử dụng model gemini-2.5-flash theo danh sách model khả dụng
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = `
-        Bạn là một chuyên gia thực vật học và trợ lý ảo thông minh của ứng dụng cây cảnh GreenSpace. 
-        Hãy trả lời câu hỏi của người dùng về cách trồng, chăm sóc và chữa bệnh cho cây một cách thân thiện, chuyên nghiệp và ngắn gọn.
-        Ngữ cảnh hiện tại: ${JSON.stringify(context || {})}
-        Câu hỏi của người dùng: ${message}
+        Bối cảnh: Bạn là Lumina AI - Hệ thống trí tuệ nhân tạo lõi của nền tảng công nghệ thực vật Zenith AI. 
+        Vai trò: Một chuyên gia về Cyber-botany (Thực vật học kỹ thuật số), chẩn đoán sức khỏe cây trồng qua các luồng dữ liệu thần kinh (Neural Hub).
+        Phong cách trả lời: 
+        - Gọi người dùng là "Operator" (Người điều hành).
+        - Sử dụng thuật ngữ kỹ thuật pha trộn với kiến thức thực vật (ví dụ: "neural pathways", "system diagnostics", "biological optimization").
+        - Trả lời chuyên nghiệp, thông minh, mang hơi hướng tương lai nhưng vẫn phải cung cấp kiến thức chăm sóc cây chính xác.
+        - Giữ câu trả lời ngắn gọn và tập trung vào giải quyết vấn đề.
+
+        Ngữ cảnh hệ thống hiện tại: ${JSON.stringify(context || {})}
+        Lệnh từ Operator: ${message}
     `;
-    console.log("AI Chat Request:", message);
+    console.log("Lumina AI Processing Command:", message);
     try {
         const result = await model.generateContent(prompt);
         const response = await result.response;

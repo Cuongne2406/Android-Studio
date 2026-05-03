@@ -1,5 +1,6 @@
 const asyncHandler = require('express-async-handler');
 const Garden = require('../models/Garden');
+const { createLog } = require('./logController');
 
 const getMyGarden = asyncHandler(async (req, res) => {
     const garden = await Garden.find({ userId: req.user._id });
@@ -19,8 +20,10 @@ const addPlantToGarden = asyncHandler(async (req, res) => {
         plantName,
         notes,
         imageUrl: imageUrl || 'https://cdn-icons-png.flaticon.com/512/628/628283.png',
-        waterStatus: 'Cần tưới'
+        waterStatus: 'Stable'
     });
+    
+    await createLog(req.user._id, 'INITIALIZE', plantName, 'New neural node synchronized to hub.');
     
     res.status(201).json(plant);
 });
@@ -44,6 +47,8 @@ const updatePlantInGarden = asyncHandler(async (req, res) => {
         { new: true }
     );
     
+    await createLog(req.user._id, 'OPTIMIZE', updatedPlant.plantName, `Node parameters modified. Status: ${updatedPlant.waterStatus}`);
+    
     res.json(updatedPlant);
 });
 
@@ -61,6 +66,8 @@ const removePlantFromGarden = asyncHandler(async (req, res) => {
     }
     
     await plant.deleteOne();
+    
+    await createLog(req.user._id, 'EJECT', plant.plantName, 'Neural node removed from system command.');
     
     res.json({ id: req.params.id });
 });
