@@ -76,7 +76,7 @@ const MainTabs = () => {
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
-          if (route.name === 'Market') iconName = focused ? 'cube' : 'cube-outline';
+          if (route.name === 'Assets') iconName = focused ? 'thermometer' : 'thermometer-outline';
           else if (route.name === 'Neural Hub') iconName = focused ? 'hardware-chip' : 'hardware-chip-outline';
           else if (route.name === 'Lumina AI') iconName = focused ? 'sparkles' : 'sparkles-outline';
           else if (route.name === 'Operator') iconName = focused ? 'person' : 'person-outline';
@@ -95,7 +95,7 @@ const MainTabs = () => {
         tabBarInactiveTintColor: theme.subText,
       })}
     >
-      <Tab.Screen name="Market" component={StoreStackScreen} />
+      <Tab.Screen name="Assets" component={StoreStackScreen} />
       <Tab.Screen name="Neural Hub" component={GardenStackScreen} />
       <Tab.Screen name="Lumina AI" component={AIScreen} />
       <Tab.Screen name="Operator" component={ProfileStackScreen} />
@@ -138,7 +138,7 @@ const DrawerNavigator = () => {
         />
 
         {/* Adding direct access to these screens for Web navigation handlers */}
-        <Drawer.Screen name="Market" component={StoreStackScreen} options={{ drawerItemStyle: { display: 'none' } }} />
+        <Drawer.Screen name="Assets" component={StoreStackScreen} options={{ drawerItemStyle: { display: 'none' } }} />
         <Drawer.Screen name="Neural Hub" component={GardenStackScreen} options={{ drawerItemStyle: { display: 'none' } }} />
         <Drawer.Screen name="Lumina AI" component={AIScreen} options={{ drawerItemStyle: { display: 'none' } }} />
         <Drawer.Screen name="Operator" component={ProfileStackScreen} options={{ drawerItemStyle: { display: 'none' } }} />

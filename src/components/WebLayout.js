@@ -68,7 +68,7 @@ const WebLayout = ({ children, navigation, activeRoute }) => {
   const navItems = [
     { name: 'Command Center', icon: 'apps', route: 'Command Center' },
     { name: 'Nodes', icon: 'hardware-chip-outline', route: 'Neural Hub' },
-    { name: 'Assets', icon: 'cube-outline', route: 'Market' },
+    { name: 'Assets', icon: 'thermometer-outline', route: 'Assets' },
     { name: 'Lumina', icon: 'sparkles-outline', route: 'Lumina AI' },
     { name: 'Operator', icon: 'person-outline', route: 'Operator' },
   ];

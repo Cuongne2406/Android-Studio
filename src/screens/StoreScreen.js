@@ -1,325 +1,242 @@
-import React, { useEffect, useContext, useRef, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, Dimensions, Platform } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
-import { fetchPlants } from '../store/slices/plantSlice';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator, Modal, ScrollView, Platform } from 'react-native';
+import { useSelector } from 'react-redux';
 import { Colors, Typography, Spacing, Shadows } from '../theme/Theme';
 import { Ionicons } from '@expo/vector-icons';
-import Animated, { FadeInUp, Layout } from 'react-native-reanimated';
-import { CartContext } from '../context/CartContext';
+import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import Toast from '../components/Toast';
-import * as Haptics from 'expo-haptics';
-import { fetchWeather } from '../services/WeatherService';
+import { fetchWeather, fetchForecast } from '../services/WeatherService';
+import WebLayout from '../components/WebLayout';
 
-const { width } = Dimensions.get('window');
-
-const WeatherWidget = ({ theme }) => {
-    const [weather, setWeather] = useState(null);
+const CityWeatherCard = ({ city, theme, onPress }) => {
+    const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        fetchWeather('Hanoi').then(data => {
-            setWeather(data);
+        fetchWeather(city).then(res => {
+            setData(res);
             setLoading(false);
         }).catch(() => setLoading(false));
-    }, []);
+    }, [city]);
 
-    if (loading) return null;
-
-    return (
-        <View style={[styles.weatherCard, { backgroundColor: 'rgba(255,255,255,0.1)' }]}>
-            {weather ? (
-                <View style={styles.weatherInfo}>
-                    <Image source={{ uri: `https:${weather.current.condition.icon}` }} style={styles.weatherIcon} />
-                    <View>
-                        <Text style={styles.weatherTemp}>{weather.current.temp_c}°C</Text>
-                        <Text style={styles.weatherCity}>{weather.location.name}</Text>
-                    </View>
-                </View>
-            ) : (
-                <Text style={styles.weatherError}>Weather unavailable</Text>
-            )}
+    if (loading) return (
+        <View style={[styles.card, { backgroundColor: theme.card, justifyContent: 'center' }]}>
+            <ActivityIndicator color={Colors.primary} />
         </View>
     );
-};
 
-import WebLayout from '../components/WebLayout';
+    if (!data) return null;
 
-export default function StoreScreen({ navigation }) {
-    const dispatch = useDispatch();
-    const toastRef = useRef(null);
-    const { data: plants, loading } = useSelector((state) => state.plants);
-    const { isDarkMode } = useSelector((state) => state.ui);
-    const { cart, addToCart } = useContext(CartContext);
-    const theme = isDarkMode ? Colors.dark : Colors.light; 
-
-    const cartCount = cart.reduce((total, item) => total + item.qty, 0);
-
-    useEffect(() => {
-        dispatch(fetchPlants());
-    }, [dispatch]);
-
-    const handleAddToCart = (plant) => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        addToCart(plant);
-        toastRef.current?.show(`Acquired ${plant.name} asset`);
-    };
-
-    const renderPlantItem = ({ item, index }) => (
-        <Animated.View 
-            entering={FadeInUp.delay(index * 100).springify()}
-            layout={Layout.springify()}
-            style={Platform.OS === 'web' && { width: '31%', minWidth: 300, marginBottom: 20 }}
-        >
+    return (
+        <Animated.View entering={FadeInUp.duration(500)}>
             <TouchableOpacity 
-                activeOpacity={0.9}
                 style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
-                onPress={() => navigation.navigate('PlantDetail', { plant: item })}
+                onPress={() => onPress(data)}
             >
-                <View style={styles.imageContainer}>
-                    <Image source={{ uri: item.imageUrl }} style={styles.plantImage} resizeMode="cover" />
-                    <LinearGradient
-                        colors={['transparent', 'rgba(0,0,0,0.2)']}
-                        style={StyleSheet.absoluteFill}
-                    />
-                </View>
-                <View style={styles.cardContent}>
+                <View style={styles.cardMain}>
                     <View>
-                        <Text style={[styles.plantName, { color: theme.text }]} numberOfLines={1}>{item.name}</Text>
-                        <View style={[styles.categoryBadge, { backgroundColor: Colors.primary + '20' }]}>
-                            <Text style={[styles.plantCategory, { color: Colors.primary }]}>{item.category || 'Neural Core'}</Text>
-                        </View>
+                        <Text style={[styles.cityName, { color: theme.text }]}>{data.location.name.toUpperCase()}</Text>
+                        <Text style={[styles.countryName, { color: theme.subText }]}>{data.location.country}</Text>
                     </View>
-                    <View style={styles.priceRow}>
-                        <Text style={[styles.plantPrice, { color: theme.text }]}>
-                            {item.price.toLocaleString()} Cr
-                        </Text>
-                        <TouchableOpacity 
-                            style={[styles.iconButton, { backgroundColor: Colors.primary }]}
-                            onPress={() => handleAddToCart(item)}
-                        >
-                            <Ionicons name="download-outline" size={20} color="#fff" />
-                        </TouchableOpacity>
+                    <View style={styles.tempContainer}>
+                        <Text style={[styles.tempText, { color: Colors.primary }]}>{data.current.temp_c}°C</Text>
+                        <Image source={{ uri: `https:${data.current.condition.icon}` }} style={styles.conditionIcon} />
+                    </View>
+                </View>
+                <View style={[styles.cardFooter, { borderTopColor: theme.border + '40' }]}>
+                    <View style={styles.statItem}>
+                        <Ionicons name="water-outline" size={14} color={theme.subText} />
+                        <Text style={[styles.statText, { color: theme.subText }]}>{data.current.humidity}%</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                        <Ionicons name="leaf-outline" size={14} color={theme.subText} />
+                        <Text style={[styles.statText, { color: theme.subText }]}>{data.current.condition.text}</Text>
+                    </View>
+                    <View style={styles.statItem}>
+                        <Ionicons name="speedometer-outline" size={14} color={theme.subText} />
+                        <Text style={[styles.statText, { color: theme.subText }]}>{data.current.wind_kph} km/h</Text>
                     </View>
                 </View>
             </TouchableOpacity>
         </Animated.View>
     );
+};
 
-    if (loading) {
-        return (
-            <View style={[styles.center, { backgroundColor: theme.background }]}>
-                <ActivityIndicator size="large" color={Colors.primary} />
-            </View>
-        );
-    }
+export default function StoreScreen({ navigation }) {
+    const { isDarkMode } = useSelector((state) => state.ui);
+    const theme = isDarkMode ? Colors.dark : Colors.light; 
+    const [selectedCity, setSelectedCity] = useState(null);
+    const [forecast, setForecast] = useState([]);
+    const [loadingForecast, setLoadingForecast] = useState(false);
+
+    const cities = ['Hanoi', 'Tokyo', 'London', 'Paris', 'New York', 'Singapore', 'Sydney', 'Moscow', 'Dubai', 'Berlin'];
+
+    const handleCityPress = async (cityData) => {
+        setSelectedCity(cityData);
+        setLoadingForecast(true);
+        try {
+            // Fetch 2 days to ensure we have enough hours if it's late at night
+            const data = await fetchForecast(cityData.location.name, 2);
+            
+            // Combine hours from today and tomorrow
+            const allHours = [
+                ...data.forecast.forecastday[0].hour,
+                ...data.forecast.forecastday[1].hour
+            ];
+
+            const now = new Date();
+            const currentEpoch = Math.floor(now.getTime() / 1000);
+            
+            // Filter: only future hours, then take the first 12
+            const futureHours = allHours.filter(h => h.time_epoch > currentEpoch);
+            const next12Hours = futureHours.slice(0, 12);
+
+            setForecast(next12Hours);
+        } catch (e) {
+            console.error("Error fetching forecast:", e);
+        } finally {
+            setLoadingForecast(false);
+        }
+    };
 
     const content = (
         <View style={[styles.container, { backgroundColor: theme.background }]}>
-            <Toast ref={toastRef} />
+            <LinearGradient
+                colors={[Colors.primary + '20', 'transparent']}
+                style={styles.headerGradient}
+            />
             
-            <View style={styles.heroContainer}>
-                <LinearGradient
-                    colors={[Colors.primary, Colors.secondary]}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                    style={styles.header}
-                >
-                    <View style={styles.headerTop}>
-                        <View>
-                            <Text style={styles.headerTitle}>Neural Marketplace</Text>
-                            <Text style={styles.headerSubtitle}>Acquire neural enhancements</Text>
-                        </View>
-                        <TouchableOpacity onPress={() => navigation.navigate('Cart')} style={styles.cartBtn}>
-                            <Ionicons name="cube-outline" size={28} color="#fff" />
-                            {cartCount > 0 && (
-                                <View style={styles.badge}>
-                                    <Text style={styles.badgeText}>{cartCount}</Text>
-                                </View>
-                            )}
-                        </TouchableOpacity>
-                    </View>
-                    
-                    <WeatherWidget theme={theme} />
-                </LinearGradient>
-                <View style={[styles.headerCurve, { backgroundColor: theme.background }]} />
+            <View style={styles.header}>
+                <Text style={[styles.headerTitle, { color: theme.text }]}>ENVIRONMENTAL ASSETS</Text>
+                <Text style={[styles.headerSubtitle, { color: theme.subText }]}>Global Node Atmospheric Monitoring</Text>
             </View>
 
             <FlatList
-                data={plants}
-                keyExtractor={(item) => item._id}
-                renderItem={renderPlantItem}
-                numColumns={Platform.OS === 'web' ? 3 : 1}
-                key={Platform.OS === 'web' ? 'grid' : 'list'}
+                data={cities}
+                keyExtractor={(item) => item}
+                renderItem={({ item }) => <CityWeatherCard city={item} theme={theme} onPress={handleCityPress} />}
                 contentContainerStyle={styles.listContainer}
-                columnWrapperStyle={Platform.OS === 'web' && { gap: 20 }}
                 showsVerticalScrollIndicator={false}
-                ListHeaderComponent={() => <View style={{ height: 10 }} />}
+                numColumns={Platform.OS === 'web' ? 2 : 1}
+                key={Platform.OS === 'web' ? '2col' : '1col'}
+                columnWrapperStyle={Platform.OS === 'web' && { gap: 20 }}
             />
+
+            <Modal
+                visible={!!selectedCity}
+                transparent={true}
+                animationType="slide"
+                onRequestClose={() => setSelectedCity(null)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+                        <View style={styles.modalHeader}>
+                            <View>
+                                <Text style={[styles.modalCityName, { color: theme.text }]}>{selectedCity?.location.name}</Text>
+                                <Text style={[styles.modalSubtitle, { color: theme.subText }]}>12-HOUR NEURAL FORECAST</Text>
+                            </View>
+                            <TouchableOpacity onPress={() => setSelectedCity(null)} style={styles.closeBtn}>
+                                <Ionicons name="close" size={28} color={theme.text} />
+                            </TouchableOpacity>
+                        </View>
+
+                        {loadingForecast ? (
+                            <ActivityIndicator size="large" color={Colors.primary} style={{ margin: 50 }} />
+                        ) : (
+                            <ScrollView style={styles.forecastList} showsVerticalScrollIndicator={false}>
+                                {forecast.map((hour, idx) => (
+                                    <View key={idx} style={[styles.forecastItem, { borderBottomColor: theme.border + '40' }]}>
+                                        <Text style={[styles.forecastTime, { color: theme.text }]}>
+                                            {new Date(hour.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                        </Text>
+                                        <Image source={{ uri: `https:${hour.condition.icon}` }} style={styles.forecastIcon} />
+                                        <Text style={[styles.forecastTemp, { color: Colors.primary }]}>{hour.temp_c}°C</Text>
+                                        <Text style={[styles.forecastCond, { color: theme.subText }]}>{hour.condition.text}</Text>
+                                    </View>
+                                ))}
+                                {forecast.length === 0 && <Text style={{ color: theme.subText, textAlign: 'center', padding: 20 }}>No further telemetry for today.</Text>}
+                            </ScrollView>
+                        )}
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 
     return (
-        <WebLayout navigation={navigation} activeRoute="Market">
+        <WebLayout navigation={navigation} activeRoute="Assets">
             {content}
         </WebLayout>
     );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    center: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center'
-    },
-    heroContainer: {
-        position: 'relative',
-        backgroundColor: '#050508',
-    },
+    container: { flex: 1 },
+    headerGradient: { position: 'absolute', top: 0, left: 0, right: 0, height: 300 },
     header: {
         paddingTop: 60,
         paddingHorizontal: Spacing.l,
-        paddingBottom: 60,
+        marginBottom: Spacing.m,
     },
-    headerTop: {
-        flexDirection: 'row', 
-        justifyContent: 'space-between', 
-        alignItems: 'center'
-    },
-    headerTitle: {
-        ...Typography.header,
-        color: '#fff',
-        fontSize: 32,
-    },
-    headerSubtitle: {
-        ...Typography.body,
-        color: 'rgba(255,255,255,0.8)',
-        marginTop: 4,
-    },
-    headerCurve: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 40,
-        borderTopLeftRadius: 40,
-        borderTopRightRadius: 40,
-    },
-    cartBtn: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    listContainer: {
-        paddingHorizontal: Spacing.l,
-        paddingBottom: 100,
-    },
+    headerTitle: { ...Typography.header, fontSize: 28, letterSpacing: 2 },
+    headerSubtitle: { ...Typography.body, fontSize: 13, opacity: 0.7, marginTop: 4 },
+    listContainer: { paddingHorizontal: Spacing.l, paddingBottom: 100 },
     card: {
-        flexDirection: 'row',
-        borderRadius: 24,
+        borderRadius: 20,
+        padding: Spacing.m,
         marginBottom: Spacing.m,
         borderWidth: 1,
-        overflow: 'hidden',
         ...Shadows.small,
-        height: 140,
+        minHeight: 120,
     },
-    imageContainer: {
-        width: 140,
-        height: '100%',
-        overflow: 'hidden',
-        backgroundColor: '#f0f0f0',
+    cardMain: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 15,
     },
-    plantImage: {
-        width: '100%',
-        height: '100%',
+    cityName: { fontSize: 20, fontWeight: '900', letterSpacing: 1 },
+    countryName: { fontSize: 12, fontWeight: '500', marginTop: 2 },
+    tempContainer: { flexDirection: 'row', alignItems: 'center' },
+    tempText: { fontSize: 28, fontWeight: 'bold', marginRight: 10 },
+    conditionIcon: { width: 40, height: 40 },
+    cardFooter: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingTop: 12,
+        borderTopWidth: 1,
     },
-    cardContent: {
+    statItem: { flexDirection: 'row', alignItems: 'center' },
+    statText: { fontSize: 12, marginLeft: 5 },
+    modalOverlay: {
         flex: 1,
-        padding: Spacing.m,
-        justifyContent: 'space-between',
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        justifyContent: 'flex-end',
     },
-    plantName: {
-        ...Typography.title,
-        fontSize: 18,
+    modalContent: {
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        padding: Spacing.l,
+        maxHeight: '80%',
     },
-    categoryBadge: {
-        alignSelf: 'flex-start',
-        backgroundColor: Colors.primary + '15',
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 8,
-        marginTop: 4,
-    },
-    plantCategory: {
-        fontSize: 12,
-        fontWeight: 'bold',
-    },
-    priceRow: {
+    modalHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        marginBottom: Spacing.xl,
     },
-    plantPrice: {
-        fontSize: 16,
-        fontWeight: '700',
-    },
-    iconButton: {
-        borderRadius: 14,
-        padding: 6,
-        ...Shadows.small,
-    },
-    badge: {
-        position: 'absolute',
-        top: -5,
-        right: -5,
-        backgroundColor: Colors.secondary,
-        borderRadius: 10,
-        minWidth: 20,
-        height: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        borderWidth: 2,
-        borderColor: '#fff',
-    },
-    badgeText: {
-        color: '#fff',
-        fontSize: 10,
-        fontWeight: 'bold',
-    },
-    weatherCard: {
-        marginTop: 20,
-        borderRadius: 16,
-        padding: 12,
+    modalCityName: { fontSize: 32, fontWeight: 'bold' },
+    modalSubtitle: { fontSize: 12, letterSpacing: 2, marginTop: 5, fontWeight: 'bold', color: Colors.primary },
+    closeBtn: { padding: 5 },
+    forecastList: { marginBottom: 20 },
+    forecastItem: {
         flexDirection: 'row',
         alignItems: 'center',
+        paddingVertical: 15,
+        borderBottomWidth: 1,
     },
-    weatherInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    weatherIcon: {
-        width: 40,
-        height: 40,
-        marginRight: 10,
-    },
-    weatherTemp: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
-    weatherCity: {
-        color: 'rgba(255,255,255,0.8)',
-        fontSize: 12,
-    },
-    weatherError: {
-        color: '#fff',
-        fontSize: 12,
-        fontStyle: 'italic',
-    }
+    forecastTime: { width: 80, fontSize: 16, fontWeight: '500' },
+    forecastIcon: { width: 35, height: 35, marginHorizontal: 15 },
+    forecastTemp: { width: 60, fontSize: 18, fontWeight: 'bold' },
+    forecastCond: { flex: 1, fontSize: 14, textAlign: 'right' },
 });
